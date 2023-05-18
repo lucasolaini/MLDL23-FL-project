@@ -1,3 +1,4 @@
+import warnings
 import os
 import json
 from collections import defaultdict
@@ -171,7 +172,11 @@ def main():
 
     print(f'Initializing model...')
     model = model_init(args)
-    model.cuda()
+    if torch.cuda.is_available():
+        model.cuda()
+    else:
+         warnings.warn("Gpu not available: moving on cpu")
+         model.cpu()   
     print('Done.')
 
     print('Generate datasets...')
