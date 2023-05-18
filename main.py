@@ -19,6 +19,7 @@ from utils.args import get_parser
 from datasets.idda import IDDADataset
 from models.deeplabv3 import deeplabv3_mobilenetv2
 from utils.stream_metrics import StreamSegMetrics, StreamClsMetrics
+from models.cnn import AlexNet
 
 
 def set_seed(random_seed):
@@ -48,9 +49,8 @@ def model_init(args):
         model.fc = nn.Linear(in_features=512, out_features=get_dataset_num_classes(args.dataset))
         return model
     if args.model == 'cnn':
-        # TODO: missing code here!
-        raise NotImplementedError
-    raise NotImplementedError
+        model = AlexNet(num_classes=get_dataset_num_classes(args.dataset))
+        return model
 
 
 def get_transforms(args):
@@ -166,8 +166,8 @@ def gen_clients(args, train_datasets, test_datasets, model):
 
 def main():
     parser = get_parser()
-    args = parser.parse_args()
-    set_seed(args.seed)
+    args = parser.parse_args() # Parses the arguments recived from command line
+    set_seed(args.seed) # Sets the seed to the one specified as argument
 
     print(f'Initializing model...')
     model = model_init(args)
