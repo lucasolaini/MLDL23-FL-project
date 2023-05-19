@@ -26,13 +26,11 @@ class Server:
             :return: model updates gathered from the clients, to be aggregated
         """
         updates = []
+
         for i, c in enumerate(clients):
-            # TODO: missing code here!
+            dataset_length, parameters = c.train()
+            updates.append(parameters)
 
-            # dataset_length, parameters = c.train()
-            # updates.append(parameters)
-
-            raise NotImplementedError
         return updates
 
     def aggregate(self, updates):
@@ -41,38 +39,36 @@ class Server:
         :param updates: updates received from the clients
         :return: aggregated parameters
         """
-        # TODO: missing code here!
-        raise NotImplementedError
+        return np.array(updates).mean(axis=1)
 
     def train(self):
         """
         This method orchestrates the training the evals and tests at rounds level
         """
         for r in range(self.args.num_rounds):
-            # TODO: missing code here!
+            clients_selected = self.select_clients()
+            updates = self.train_round(clients_selected)
+            aggregated_updates = self.aggregate(updates)
+            self.model_params_dict = aggregated_updates
+            self.eval_train()
+            self.test()
+            self.metrics.get_results()
+            self._show_result()
 
-            # updates = self.train_round()
-            # aggregated_updates = self.aggregate(updates)
-
-            raise NotImplementedError
 
     def eval_train(self):
         """
         This method handles the evaluation on the train clients
         """
-        # TODO: missing code here!
-        # for i, c in enumerate(self.train_clients):
-            # test_accuracy = c.test(self.metrics)
-        raise NotImplementedError
+        for i, c in enumerate(self.train_clients):
+            c.test(self.metrics)
 
     def test(self):
         """
-            This method handles the test on the test clients
+        This method handles the test on the test clients
         """
-        # TODO: missing code here!
+        for i, c in enumerate(self.test_clients):
+            c.test(self.metrics)
 
-        # for i, c in enumerate(self.test_clients):
-            # test_accuracy = c.test(self.metrics)
-
-
-        raise NotImplementedError
+    def _show_results(self):
+        print(self.metrics.results)

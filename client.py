@@ -36,6 +36,8 @@ class Client:
             return self.model(images)['out']
         if self.args.model == 'resnet18':
             return self.model(images)
+        if self.args.model == 'cnn':
+            return self.model(images)
         raise NotImplementedError
 
     def run_epoch(self, cur_epoch, optimizer):
@@ -44,17 +46,14 @@ class Client:
         :param cur_epoch: current epoch of training
         :param optimizer: optimizer used for the local training
         """
+
         for cur_step, (images, labels) in enumerate(self.train_loader):
-            # TODO: missing code here!
-
-            # images, labels = images.cuda(), labels.cuda() # Load data into GPU
-            # outputs = self.model(images) # Forward pass
-            # loss = self.criterion(outputs, labels) # Apply the loss
-            # loss.backward() # Backward pass
-            # optimizer.step() # Update parameters
-            # optimizer.zero_grad() # Reset the optimizer
-
-            raise NotImplementedError
+            images, labels = images.cuda(), labels.cuda() # Load data into GPU
+            outputs = self._get_outputs(images) # Forward pass
+            loss = self.criterion(outputs, labels) # Apply the loss
+            loss.backward() # Backward pass
+            optimizer.step() # Update parameters
+            optimizer.zero_grad() # Reset the optimizer
 
     def train(self):
         """
@@ -62,20 +61,14 @@ class Client:
         (by calling the run_epoch method for each local epoch of training)
         :return: length of the local dataset, copy of the model parameters
         """
-        # TODO: missing code here!
 
-        # self.model.train()
-        # WHY NOT A PARAMETER OF THE CLIENT?
-        # optimizer = torch.optim.SGD(net.parameters(), lr=lr, weight_decay=wd, momentum=momentum)
+        self.model.train()
+        optimizer = torch.optim.SGD(self.model.parameters(), lr=self.args.lr, weight_decay=self.args.wd, momentum=self.args.m)
 
         for epoch in range(self.args.num_epochs):
-            # TODO: missing code here!
+            self.run_epoch(epoch, optimizer)
 
-            # self.run_epoch(epoch, optimizer)
-
-            raise NotImplementedError
-        
-        # return len(self.dataset), model.parameters
+        return len(self.dataset), copy.copy(self.model.parameters())
 
         
 
@@ -84,16 +77,11 @@ class Client:
         This method tests the model on the local dataset of the client.
         :param metric: StreamMetric object
         """
-        # TODO: missing code here!
 
-        # net.eval()
+        self.model.eval()
 
         with torch.no_grad():
             for i, (images, labels) in enumerate(self.test_loader):
-                # TODO: missing code here!
-
-                # images, labels = images.cuda(), labels.cuda()
-                # outputs = net(images)
-
-                raise NotImplementedError
+                images, labels = images.cuda(), labels.cuda()
+                outputs = self._get_outputs(images)
                 self.update_metric(metric, outputs, labels)
