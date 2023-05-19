@@ -46,6 +46,14 @@ class Client:
         """
         for cur_step, (images, labels) in enumerate(self.train_loader):
             # TODO: missing code here!
+
+            # images, labels = images.cuda(), labels.cuda() # Load data into GPU
+            # outputs = self.model(images) # Forward pass
+            # loss = self.criterion(outputs, labels) # Apply the loss
+            # loss.backward() # Backward pass
+            # optimizer.step() # Update parameters
+            # optimizer.zero_grad() # Reset the optimizer
+
             raise NotImplementedError
 
     def train(self):
@@ -55,9 +63,21 @@ class Client:
         :return: length of the local dataset, copy of the model parameters
         """
         # TODO: missing code here!
+
+        # self.model.train()
+        # WHY NOT A PARAMETER OF THE CLIENT?
+        # optimizer = torch.optim.SGD(net.parameters(), lr=lr, weight_decay=wd, momentum=momentum)
+
         for epoch in range(self.args.num_epochs):
             # TODO: missing code here!
+
+            # self.run_epoch(epoch, optimizer)
+
             raise NotImplementedError
+        
+        # return len(self.dataset), model.parameters
+
+        
 
     def test(self, metric):
         """
@@ -65,8 +85,15 @@ class Client:
         :param metric: StreamMetric object
         """
         # TODO: missing code here!
+
+        # net.eval()
+
         with torch.no_grad():
             for i, (images, labels) in enumerate(self.test_loader):
                 # TODO: missing code here!
+
+                # images, labels = images.cuda(), labels.cuda()
+                # outputs = net(images)
+
                 raise NotImplementedError
                 self.update_metric(metric, outputs, labels)

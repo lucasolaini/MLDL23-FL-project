@@ -28,6 +28,10 @@ class Server:
         updates = []
         for i, c in enumerate(clients):
             # TODO: missing code here!
+
+            # dataset_length, parameters = c.train()
+            # updates.append(parameters)
+
             raise NotImplementedError
         return updates
 
@@ -46,6 +50,10 @@ class Server:
         """
         for r in range(self.args.num_rounds):
             # TODO: missing code here!
+
+            # updates = self.train_round()
+            # aggregated_updates = self.aggregate(updates)
+
             raise NotImplementedError
 
     def eval_train(self):
@@ -53,6 +61,8 @@ class Server:
         This method handles the evaluation on the train clients
         """
         # TODO: missing code here!
+        # for i, c in enumerate(self.train_clients):
+            # test_accuracy = c.test(self.metrics)
         raise NotImplementedError
 
     def test(self):
@@ -60,4 +70,9 @@ class Server:
             This method handles the test on the test clients
         """
         # TODO: missing code here!
+
+        # for i, c in enumerate(self.test_clients):
+            # test_accuracy = c.test(self.metrics)
+
+
         raise NotImplementedError
