@@ -24,8 +24,12 @@ class Femnist(Dataset):
         self.client_name = client_name
 
     def __getitem__(self, index: int) -> Any:
-        # TODO: missing code here!
-        raise NotImplementedError
+        image = np.array(self.samples[index][0])
+        label = np.array(self.samples[index][1])
+
+        if self.transform is not None:
+            image = self.transform(image)
+        return image, label
 
     def __len__(self) -> int:
         return len(self.samples)
