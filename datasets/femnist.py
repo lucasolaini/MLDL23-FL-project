@@ -24,8 +24,8 @@ class Femnist(Dataset):
         self.client_name = client_name
 
     def __getitem__(self, index: int) -> Any:
-        image = np.array(self.samples[index][0])
-        label = np.array(self.samples[index][1])
+        image = np.array(self.samples[index][0]).reshape(28, 28, 1)
+        label = self.samples[index][1]
 
         if self.transform is not None:
             image = self.transform(image)

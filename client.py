@@ -18,7 +18,7 @@ class Client:
         self.train_loader = DataLoader(self.dataset, batch_size=self.args.bs, shuffle=True, drop_last=True) \
             if not test_client else None
         self.test_loader = DataLoader(self.dataset, batch_size=1, shuffle=False)
-        self.criterion = nn.CrossEntropyLoss(ignore_index=255, reduction='none')
+        self.criterion = nn.CrossEntropyLoss(ignore_index=255, reduction='mean') # reduction was 'none'
         self.reduction = HardNegativeMining() if self.args.hnm else MeanReduction()
 
     def __str__(self):
@@ -46,7 +46,6 @@ class Client:
         :param cur_epoch: current epoch of training
         :param optimizer: optimizer used for the local training
         """
-
         for cur_step, (images, labels) in enumerate(self.train_loader):
             images, labels = images.cuda(), labels.cuda() # Load data into GPU
             outputs = self._get_outputs(images) # Forward pass
@@ -68,7 +67,7 @@ class Client:
         for epoch in range(self.args.num_epochs):
             self.run_epoch(epoch, optimizer)
 
-        return len(self.dataset), copy.copy(self.model.parameters())
+        return len(self.dataset), copy.copy(self.model.parameters)
 
         
 
@@ -77,7 +76,6 @@ class Client:
         This method tests the model on the local dataset of the client.
         :param metric: StreamMetric object
         """
-
         self.model.eval()
 
         with torch.no_grad():

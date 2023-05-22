@@ -28,9 +28,11 @@ class Server:
         updates = []
 
         for i, c in enumerate(clients):
+           
             dataset_length, parameters = c.train()
-            updates.append(parameters)
-
+            updates.append(parameters())
+            return updates
+        
         return updates
 
     def aggregate(self, updates):
@@ -39,17 +41,22 @@ class Server:
         :param updates: updates received from the clients
         :return: aggregated parameters
         """
-        return np.array(updates).mean(axis=1)
+        return np.sum(updates, axis=0)
+
 
     def train(self):
         """
         This method orchestrates the training the evals and tests at rounds level
         """
+        print(f'Train clients: {len(self.train_clients)}')
+        print(f'Test clients: {len(self.test_clients)}')
         for r in range(self.args.num_rounds):
+            print(f'Round {r}')
             clients_selected = self.select_clients()
             updates = self.train_round(clients_selected)
+            print(len(updates))
             aggregated_updates = self.aggregate(updates)
-            self.model_params_dict = aggregated_updates
+            self.model.load_state_dict(OrderedDict(aggregated_updates))
             self.eval_train()
             self.test()
             self.metrics.get_results()
