@@ -30,8 +30,7 @@ class Server:
         for i, c in enumerate(clients):
            
             dataset_length, parameters = c.train()
-            updates.append(parameters())
-            return updates
+            updates.append(parameters)
         
         return updates
 
@@ -41,41 +40,56 @@ class Server:
         :param updates: updates received from the clients
         :return: aggregated parameters
         """
-        return np.sum(updates, axis=0)
+        aggregated_update = None
 
+        for update in updates:
+            if aggregated_update == None:
+                aggregated_update = update
+            else:
+                for k, v in update.items():
+                    aggregated_update[k] += v
+
+        return aggregated_update
 
     def train(self):
         """
         This method orchestrates the training the evals and tests at rounds level
         """
-        print(f'Train clients: {len(self.train_clients)}')
-        print(f'Test clients: {len(self.test_clients)}')
+        print(f'Number of train clients: {len(self.train_clients)}')
+        print(f'Number of test clients: {len(self.test_clients)}')
         for r in range(self.args.num_rounds):
             print(f'Round {r}')
             clients_selected = self.select_clients()
             updates = self.train_round(clients_selected)
-            print(len(updates))
-            aggregated_updates = self.aggregate(updates)
-            self.model.load_state_dict(OrderedDict(aggregated_updates))
+            aggregated_state_dict = self.aggregate(updates)
+            self.model_params_dict = aggregated_state_dict
+            self.update_client_state(clients_selected, aggregated_state_dict)
+            self.model.load_state_dict(aggregated_state_dict)
             self.eval_train()
             self.test()
-            self.metrics.get_results()
-            self._show_result()
 
+    def update_client_state(self, clients, update):
+        for c in clients:
+            c.model.load_state_dict(update)
 
     def eval_train(self):
         """
         This method handles the evaluation on the train clients
         """
         for i, c in enumerate(self.train_clients):
-            c.test(self.metrics)
+            c.test(self.metrics['eval_train'])
+
+        print(f'Train set')
+        self.metrics['eval_train'].get_results()
+        print(self.metrics['eval_train'].__str__())
 
     def test(self):
         """
         This method handles the test on the test clients
         """
         for i, c in enumerate(self.test_clients):
-            c.test(self.metrics)
+            c.test(self.metrics['test'])
 
-    def _show_results(self):
-        print(self.metrics.results)
+        print(f'Test set')
+        self.metrics['test'].get_results()
+        print(self.metrics['test'].__str__())

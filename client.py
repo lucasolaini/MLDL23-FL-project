@@ -67,7 +67,7 @@ class Client:
         for epoch in range(self.args.num_epochs):
             self.run_epoch(epoch, optimizer)
 
-        return len(self.dataset), copy.copy(self.model.parameters)
+        return len(self.dataset), copy.copy(self.model.state_dict())
 
         
 

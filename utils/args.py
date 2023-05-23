@@ -13,7 +13,7 @@ def get_parser():
     parser.add_argument('--clients_per_round', type=int, help='number of clients trained per round')
     parser.add_argument('--hnm', action='store_true', default=False, help='Use hard negative mining reduction or not')
     parser.add_argument('--lr', type=float, default=0.05, help='learning rate')
-    parser.add_argument('--bs', type=int, default=4, help='batch size')
+    parser.add_argument('--bs', type=int, default=64, help='batch size')
     parser.add_argument('--wd', type=float, default=0, help='weight decay')
     parser.add_argument('--m', type=float, default=0.9, help='momentum')
     parser.add_argument('--print_train_interval', type=int, default=10, help='client print train interval')
