@@ -60,14 +60,13 @@ class Client:
         (by calling the run_epoch method for each local epoch of training)
         :return: length of the local dataset, copy of the model parameters
         """
-
         self.model.train()
         optimizer = torch.optim.SGD(self.model.parameters(), lr=self.args.lr, weight_decay=self.args.wd, momentum=self.args.m)
 
         for epoch in range(self.args.num_epochs):
             self.run_epoch(epoch, optimizer)
 
-        return len(self.dataset), copy.copy(self.model.state_dict())
+        return len(self.dataset), copy.deepcopy(self.model.state_dict())
 
         
 
