@@ -29,7 +29,12 @@ class Server:
 
         for i, c in enumerate(clients):
            
+            print(f'Training client {i}: {c.name}')
             dataset_length, parameters = c.train()
+
+            for k, v in parameters.items():
+                parameters[k] = parameters[k] / dataset_length
+
             updates.append(parameters)
         
         return updates
@@ -57,19 +62,32 @@ class Server:
         """
         print(f'Number of train clients: {len(self.train_clients)}')
         print(f'Number of test clients: {len(self.test_clients)}')
+
         for r in range(self.args.num_rounds):
             print(f'Round {r}')
             clients_selected = self.select_clients()
             updates = self.train_round(clients_selected)
+
+            print('Aggregating updates...')
             aggregated_state_dict = self.aggregate(updates)
-            self.model_params_dict = aggregated_state_dict
-            self.update_client_state(clients_selected, aggregated_state_dict)
+            print('Done')
+
+            print('Updating clients models...')
+            self.update_client_state(aggregated_state_dict)
             self.model.load_state_dict(aggregated_state_dict)
-            self.eval_train()
+            print('Done')
+
+            print('Evaluation on the training set of each client')
+            # self.eval_train()
+
+            print('Evaluation on the test set of each client')
             self.test()
 
-    def update_client_state(self, clients, update):
-        for c in clients:
+    def update_client_state(self, update):
+        for c in self.train_clients:
+            c.model.load_state_dict(update)
+
+        for c in self.test_clients:
             c.model.load_state_dict(update)
 
     def eval_train(self):
@@ -77,9 +95,10 @@ class Server:
         This method handles the evaluation on the train clients
         """
         for i, c in enumerate(self.train_clients):
+            print(f'Training client {i}: {c.name}')
             c.test(self.metrics['eval_train'])
 
-        print(f'Train set')
+        print(f'Evaluation on train clients')
         self.metrics['eval_train'].get_results()
         print(self.metrics['eval_train'].__str__())
 
@@ -88,8 +107,9 @@ class Server:
         This method handles the test on the test clients
         """
         for i, c in enumerate(self.test_clients):
+            print(f'Test client {i}: {c.name}')
             c.test(self.metrics['test'])
 
-        print(f'Test set')
+        print(f'Test on test clients')
         self.metrics['test'].get_results()
         print(self.metrics['test'].__str__())
