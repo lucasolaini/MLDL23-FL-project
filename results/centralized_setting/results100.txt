@@ -1,0 +1,113 @@
+Parameters:
+	 learning_rate: 1, weight_decay: 1e-06, momentum: 0.5, epochs: 10
+
+Epoch: 1
+	 Training loss nan, Training accuracy 2.17
+	 Validation loss nan, Validation accuracy 2.04
+-----------------------------------------------------
+After training:
+	 Training loss nan, Training accuracy 2.15
+	 Validation loss nan, Validation accuracy 2.04
+	 Test loss nan, Test accuracy 2.13
+
+-----------------------------------------------------
+
+Epoch: 2
+	 Training loss nan, Training accuracy 2.15
+	 Validation loss nan, Validation accuracy 2.04
+-----------------------------------------------------
+After training:
+	 Training loss nan, Training accuracy 2.15
+	 Validation loss nan, Validation accuracy 2.04
+	 Test loss nan, Test accuracy 2.13
+
+-----------------------------------------------------
+
+Epoch: 3
+	 Training loss nan, Training accuracy 2.15
+	 Validation loss nan, Validation accuracy 2.04
+-----------------------------------------------------
+After training:
+	 Training loss nan, Training accuracy 2.15
+	 Validation loss nan, Validation accuracy 2.04
+	 Test loss nan, Test accuracy 2.13
+
+-----------------------------------------------------
+
+Epoch: 4
+	 Training loss nan, Training accuracy 2.15
+	 Validation loss nan, Validation accuracy 2.04
+-----------------------------------------------------
+After training:
+	 Training loss nan, Training accuracy 2.15
+	 Validation loss nan, Validation accuracy 2.04
+	 Test loss nan, Test accuracy 2.13
+
+-----------------------------------------------------
+
+Epoch: 5
+	 Training loss nan, Training accuracy 2.15
+	 Validation loss nan, Validation accuracy 2.04
+-----------------------------------------------------
+After training:
+	 Training loss nan, Training accuracy 2.15
+	 Validation loss nan, Validation accuracy 2.04
+	 Test loss nan, Test accuracy 2.13
+
+-----------------------------------------------------
+
+Epoch: 6
+	 Training loss nan, Training accuracy 2.15
+	 Validation loss nan, Validation accuracy 2.04
+-----------------------------------------------------
+After training:
+	 Training loss nan, Training accuracy 2.15
+	 Validation loss nan, Validation accuracy 2.04
+	 Test loss nan, Test accuracy 2.13
+
+-----------------------------------------------------
+
+Epoch: 7
+	 Training loss nan, Training accuracy 2.15
+	 Validation loss nan, Validation accuracy 2.04
+-----------------------------------------------------
+After training:
+	 Training loss nan, Training accuracy 2.15
+	 Validation loss nan, Validation accuracy 2.04
+	 Test loss nan, Test accuracy 2.13
+
+-----------------------------------------------------
+
+Epoch: 8
+	 Training loss nan, Training accuracy 2.15
+	 Validation loss nan, Validation accuracy 2.04
+-----------------------------------------------------
+After training:
+	 Training loss nan, Training accuracy 2.15
+	 Validation loss nan, Validation accuracy 2.04
+	 Test loss nan, Test accuracy 2.13
+
+-----------------------------------------------------
+
+Epoch: 9
+	 Training loss nan, Training accuracy 2.15
+	 Validation loss nan, Validation accuracy 2.04
+-----------------------------------------------------
+After training:
+	 Training loss nan, Training accuracy 2.15
+	 Validation loss nan, Validation accuracy 2.04
+	 Test loss nan, Test accuracy 2.13
+
+-----------------------------------------------------
+
+Epoch: 10
+	 Training loss nan, Training accuracy 2.15
+	 Validation loss nan, Validation accuracy 2.04
+-----------------------------------------------------
+After training:
+	 Training loss nan, Training accuracy 2.15
+	 Validation loss nan, Validation accuracy 2.04
+	 Test loss nan, Test accuracy 2.13
+
+-----------------------------------------------------
+

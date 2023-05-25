@@ -1,0 +1,14 @@
+Parameters:
+	 learning_rate: 0.01, weight_decay: 0.0001, momentum: 0.7, epochs: 1
+
+Epoch: 1
+	 Training loss 0.02051, Training accuracy 62.40
+	 Validation loss 0.00368, Validation accuracy 75.80
+-----------------------------------------------------
+After training:
+	 Training loss 0.01420, Training accuracy 75.90
+	 Validation loss 0.00368, Validation accuracy 75.80
+	 Test loss 0.00378, Test accuracy 75.05
+
+-----------------------------------------------------
+
