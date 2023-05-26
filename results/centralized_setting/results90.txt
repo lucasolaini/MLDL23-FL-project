@@ -1,0 +1,113 @@
+Parameters:
+	 learning_rate: 0.01, weight_decay: 0.01, momentum: 0.9, epochs: 10
+
+Epoch: 1
+	 Training loss 0.01711, Training accuracy 67.82
+	 Validation loss 0.00264, Validation accuracy 78.39
+-----------------------------------------------------
+After training:
+	 Training loss 0.01005, Training accuracy 79.29
+	 Validation loss 0.00264, Validation accuracy 78.39
+	 Test loss 0.00267, Test accuracy 78.16
+
+-----------------------------------------------------
+
+Epoch: 2
+	 Training loss 0.00996, Training accuracy 79.63
+	 Validation loss 0.00459, Validation accuracy 64.86
+-----------------------------------------------------
+After training:
+	 Training loss 0.01786, Training accuracy 65.17
+	 Validation loss 0.00459, Validation accuracy 64.86
+	 Test loss 0.00467, Test accuracy 64.67
+
+-----------------------------------------------------
+
+Epoch: 3
+	 Training loss 0.00978, Training accuracy 79.72
+	 Validation loss 0.00237, Validation accuracy 80.29
+-----------------------------------------------------
+After training:
+	 Training loss 0.00898, Training accuracy 80.89
+	 Validation loss 0.00237, Validation accuracy 80.29
+	 Test loss 0.00241, Test accuracy 80.03
+
+-----------------------------------------------------
+
+Epoch: 4
+	 Training loss 0.00945, Training accuracy 80.61
+	 Validation loss 0.01157, Validation accuracy 32.19
+-----------------------------------------------------
+After training:
+	 Training loss 0.04517, Training accuracy 32.59
+	 Validation loss 0.01157, Validation accuracy 32.19
+	 Test loss 0.01151, Test accuracy 32.81
+
+-----------------------------------------------------
+
+Epoch: 5
+	 Training loss 0.01023, Training accuracy 79.20
+	 Validation loss 0.00256, Validation accuracy 79.32
+-----------------------------------------------------
+After training:
+	 Training loss 0.00971, Training accuracy 80.18
+	 Validation loss 0.00256, Validation accuracy 79.32
+	 Test loss 0.00259, Test accuracy 78.85
+
+-----------------------------------------------------
+
+Epoch: 6
+	 Training loss 0.00926, Training accuracy 80.75
+	 Validation loss 0.00256, Validation accuracy 78.80
+-----------------------------------------------------
+After training:
+	 Training loss 0.00974, Training accuracy 79.58
+	 Validation loss 0.00256, Validation accuracy 78.80
+	 Test loss 0.00259, Test accuracy 78.69
+
+-----------------------------------------------------
+
+Epoch: 7
+	 Training loss 0.00916, Training accuracy 81.11
+	 Validation loss 0.00243, Validation accuracy 79.41
+-----------------------------------------------------
+After training:
+	 Training loss 0.00925, Training accuracy 79.99
+	 Validation loss 0.00243, Validation accuracy 79.41
+	 Test loss 0.00248, Test accuracy 78.68
+
+-----------------------------------------------------
+
+Epoch: 8
+	 Training loss 0.00913, Training accuracy 81.09
+	 Validation loss 0.00280, Validation accuracy 76.76
+-----------------------------------------------------
+After training:
+	 Training loss 0.01071, Training accuracy 77.49
+	 Validation loss 0.00280, Validation accuracy 76.76
+	 Test loss 0.00285, Test accuracy 76.09
+
+-----------------------------------------------------
+
+Epoch: 9
+	 Training loss 0.00917, Training accuracy 81.02
+	 Validation loss 0.00622, Validation accuracy 54.22
+-----------------------------------------------------
+After training:
+	 Training loss 0.02416, Training accuracy 55.17
+	 Validation loss 0.00622, Validation accuracy 54.22
+	 Test loss 0.00625, Test accuracy 54.29
+
+-----------------------------------------------------
+
+Epoch: 10
+	 Training loss 0.00944, Training accuracy 80.51
+	 Validation loss 0.00289, Validation accuracy 77.28
+-----------------------------------------------------
+After training:
+	 Training loss 0.01107, Training accuracy 78.03
+	 Validation loss 0.00289, Validation accuracy 77.28
+	 Test loss 0.00294, Test accuracy 76.99
+
+-----------------------------------------------------
+

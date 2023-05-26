@@ -176,5 +176,3 @@ if __name__ == '__main__':
     # hyperparameters tuning
     for i, param in enumerate(params):
         main(**param, device='cpu', fileNo=i+1)
-        if i == 1:
-            break

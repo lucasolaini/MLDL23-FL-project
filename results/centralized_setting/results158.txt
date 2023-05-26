@@ -1,0 +1,58 @@
+Parameters:
+	 learning_rate: 0.01, weight_decay: 0.0001, momentum: 0.7, epochs: 5
+
+Epoch: 1
+	 Training loss 0.01376, Training accuracy 52.13
+	 Validation loss 0.04552, Validation accuracy 6.01
+-----------------------------------------------------
+After training:
+	 Training loss 0.09097, Training accuracy 5.98
+	 Validation loss 0.04552, Validation accuracy 6.01
+	 Test loss 0.04567, Test accuracy 6.07
+
+-----------------------------------------------------
+
+Epoch: 2
+	 Training loss 0.00602, Training accuracy 77.02
+	 Validation loss 0.00254, Validation accuracy 79.07
+-----------------------------------------------------
+After training:
+	 Training loss 0.00484, Training accuracy 80.07
+	 Validation loss 0.00254, Validation accuracy 79.07
+	 Test loss 0.00262, Test accuracy 78.92
+
+-----------------------------------------------------
+
+Epoch: 3
+	 Training loss 0.00416, Training accuracy 82.28
+	 Validation loss 0.00220, Validation accuracy 81.14
+-----------------------------------------------------
+After training:
+	 Training loss 0.00406, Training accuracy 82.32
+	 Validation loss 0.00220, Validation accuracy 81.14
+	 Test loss 0.00227, Test accuracy 80.99
+
+-----------------------------------------------------
+
+Epoch: 4
+	 Training loss 0.00368, Training accuracy 83.98
+	 Validation loss 0.00207, Validation accuracy 82.42
+-----------------------------------------------------
+After training:
+	 Training loss 0.00373, Training accuracy 83.81
+	 Validation loss 0.00207, Validation accuracy 82.42
+	 Test loss 0.00214, Test accuracy 82.05
+
+-----------------------------------------------------
+
+Epoch: 5
+	 Training loss 0.00341, Training accuracy 85.00
+	 Validation loss 0.00184, Validation accuracy 84.31
+-----------------------------------------------------
+After training:
+	 Training loss 0.00319, Training accuracy 85.80
+	 Validation loss 0.00184, Validation accuracy 84.31
+	 Test loss 0.00189, Test accuracy 84.02
+
+-----------------------------------------------------
+
