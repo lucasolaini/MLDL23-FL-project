@@ -99,7 +99,8 @@ class Server:
                     "lr=" + str(self.args.lr) + "_" + \
                     "wd=" + str(self.args.wd) + "_" + \
                     "m=" + str(self.args.m) + "_" + \
-                    "e=" + str(self.args.num_epochs),
+                    "e=" + str(self.args.num_epochs) +"_" + \
+                    "cpr=" + str(self.args.clients_per_round),
             config = {
             "niid": self.args.niid,
             "learning_rate": self.args.lr,
