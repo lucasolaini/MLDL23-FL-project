@@ -131,8 +131,8 @@ class Server:
             print('Evaluation on the test set of each client')
             self.test()
 
-            wandb.log({"Overall Accuracy": self.metrics['test'].results['Overall Acc'], \
-                       "Mean Accuracy": self.metrics['test'].results['Mean Acc']})
+            wandb.log({"Overall Accuracy": self.metrics['test'].results['Overall Acc'] * 100, \
+                       "Mean Accuracy": self.metrics['test'].results['Mean Acc'] * 100})
             
         wandb.finish()
 
