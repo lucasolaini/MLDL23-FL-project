@@ -1,9 +1,9 @@
 import torch.nn as nn
 
-class AlexNet(nn.Module):
+class CNN(nn.Module):
 
   def __init__(self, num_classes):
-    super(AlexNet, self).__init__()
+    super(CNN, self).__init__()
     self.layer1 = nn.Sequential(
         nn.Conv2d(1, 32, kernel_size=5, stride=2, padding=1),
         # nn.BatchNorm2d(32),
