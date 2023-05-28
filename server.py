@@ -15,6 +15,9 @@ class Server:
         self.model = model
         self.metrics = metrics
         self.model_params_dict = copy.deepcopy(self.model.state_dict())
+        
+        self.wandb_run_id = ""
+        self.wandb_run_name = ""
 
     def select_clients(self, strategy='uniform'):
         if strategy == 'uniform':
@@ -87,35 +90,8 @@ class Server:
         """
         This method orchestrates the training the evals and tests at rounds level
         """
-
-        wandb.login()
-        if self.args.niid:
-            project = "Federated_setting_niid"
-        else:
-            project = "Federated_setting_iid"
-        wandb.init(
-            project = project,
-            name = "bs=" + str(self.args.bs) + "_" + \
-                    "lr=" + str(self.args.lr) + "_" + \
-                    "wd=" + str(self.args.wd) + "_" + \
-                    "m=" + str(self.args.m) + "_" + \
-                    "e=" + str(self.args.num_epochs) +"_" + \
-                    "cpr=" + str(self.args.clients_per_round),
-            config = {
-            "niid": self.args.niid,
-            "learning_rate": self.args.lr,
-            "weight_decay": self.args.wd,
-            "momentum": self.args.m,
-            "batch_size": self.args.bs,
-            "rounds": self.args.num_rounds,
-            "epochs": self.args.num_epochs,
-            "clients_per_round": self.args.clients_per_round,
-            "model": self.model._get_name()
-            }
-        )
-
-        print(f'Number of train clients: {len(self.train_clients)}')
-        print(f'Number of test clients: {len(self.test_clients)}')
+        
+        self.setup_wandb()
 
         for r in range(self.args.num_rounds):
             print(f'Round {r}')
@@ -125,6 +101,7 @@ class Server:
             aggregated_state_dict = self.aggregate(updates)
 
             self.model.load_state_dict(aggregated_state_dict)
+            torch.save(self.model.state_dict(), "backups/" + self.wandb_run_id)
 
             print('Evaluation on the training set of each client')
             # self.eval_train()
@@ -171,3 +148,48 @@ class Server:
         print(f'Test on test clients')
         self.metrics['test'].get_results()
         print(self.metrics['test'].__str__())
+        
+        
+    def setup_wandb(self):
+        """
+        This method sets up wandb
+        """
+        
+        wandb.login()
+        
+        # select the correct project in wandb
+        if self.args.niid:
+            project = "Federated_setting_niid"
+        else:
+            project = "Federated_setting_iid"
+        
+        # assings a name to the run    
+        name = "bs=" + str(self.args.bs) + "_" + \
+               "lr=" + str(self.args.lr) + "_" + \
+               "wd=" + str(self.args.wd) + "_" + \
+               "m=" + str(self.args.m) + "_" + \
+               "e=" + str(self.args.num_epochs) +"_" + \
+               "cpr=" + str(self.args.clients_per_round)
+        
+        # select the current configuration       
+        config = {
+            "niid": self.args.niid,
+            "learning_rate": self.args.lr,
+            "weight_decay": self.args.wd,
+            "momentum": self.args.m,
+            "batch_size": self.args.bs,
+            "rounds": self.args.num_rounds,
+            "epochs": self.args.num_epochs,
+            "clients_per_round": self.args.clients_per_round,
+            "model": self.model._get_name()
+        }
+               
+        wandb.init(project=project, name=name, config=config)
+        
+        # VA SPECIFICATO IL PATH DELLA RUN DA RIPRENDERE
+        # path = "backups/hmty8t1s"
+        # wandb.init(project=project, name=name, config=config, id=DACOMPLETARE, resume=True)
+        # self.model.load_state_dict(torch.load(path))
+        
+        self.wandb_run_id = wandb.run.id
+        self.wand_run_name = wandb.run.name
