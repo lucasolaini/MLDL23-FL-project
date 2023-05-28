@@ -101,7 +101,7 @@ class Server:
             aggregated_state_dict = self.aggregate(updates)
 
             self.model.load_state_dict(aggregated_state_dict)
-            torch.save(self.model.state_dict(), "backups/" + self.wandb_run_id)
+            torch.save(self.model.state_dict(), "../gdrive/MyDrive/backups/" + self.wandb_run_id)
 
             print('Evaluation on the training set of each client')
             # self.eval_train()
