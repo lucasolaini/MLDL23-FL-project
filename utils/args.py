@@ -20,4 +20,8 @@ def get_parser():
     parser.add_argument('--print_test_interval', type=int, default=10, help='client print test interval')
     parser.add_argument('--eval_interval', type=int, default=10, help='eval interval')
     parser.add_argument('--test_interval', type=int, default=10, help='test interval')
+    parser.add_argument('--backup_folder', type=str, help='directory in which the model states')
+    parser.add_argument('--backup', action='store_true', default=False, help='Decides if to load the model state or not')
+    parser.add_argument('--backup_path', type=str, default='', help='backup file path. Use only if --backup is True')
+    parser.add_argument('--run_id', type=str, default='', help='wandb: id of the run interrupted. Use only if --backup is True')
     return parser

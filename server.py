@@ -16,8 +16,7 @@ class Server:
         self.metrics = metrics
         self.model_params_dict = copy.deepcopy(self.model.state_dict())
         
-        self.wandb_run_id = ""
-        self.wandb_run_name = ""
+        self.wandb_run_id = ''
 
     def select_clients(self, strategy='uniform'):
         if strategy == 'uniform':
@@ -51,9 +50,6 @@ class Server:
         dataset_lengths = []
 
         for i, c in enumerate(clients):
-           
-            print(f'Training client {i}: {c.name}')
-
             # update training client's model
             c.model.load_state_dict(self.model.state_dict())
             
@@ -101,12 +97,9 @@ class Server:
             aggregated_state_dict = self.aggregate(updates)
 
             self.model.load_state_dict(aggregated_state_dict)
-            torch.save(self.model.state_dict(), "../gdrive/MyDrive/backups/" + self.wandb_run_id)
+            torch.save(self.model.state_dict(), self.args.backup_folder + '/' + self.wandb_run_id)
 
-            print('Evaluation on the training set of each client')
             # self.eval_train()
-
-            print('Evaluation on the test set of each client')
             self.test()
 
             wandb.log({"Overall Accuracy": self.metrics['test'].results['Overall Acc'] * 100, \
@@ -138,16 +131,12 @@ class Server:
         This method handles the test on the test clients
         """
         for i, c in enumerate(self.test_clients):
-            print(f'Test client {i}: {c.name}')
 
             # update test client's model
             c.model.load_state_dict(self.model.state_dict())
-
             c.test(self.metrics['test'])
 
-        print(f'Test on test clients')
         self.metrics['test'].get_results()
-        print(self.metrics['test'].__str__())
         
         
     def setup_wandb(self):
@@ -162,6 +151,8 @@ class Server:
             project = "Federated_setting_niid"
         else:
             project = "Federated_setting_iid"
+            
+        project = "prova"
         
         # assings a name to the run    
         name = "bs=" + str(self.args.bs) + "_" + \
@@ -183,13 +174,13 @@ class Server:
             "clients_per_round": self.args.clients_per_round,
             "model": self.model._get_name()
         }
-               
-        wandb.init(project=project, name=name, config=config)
-        
-        # VA SPECIFICATO IL PATH DELLA RUN DA RIPRENDERE
-        # path = "backups/hmty8t1s"
-        # wandb.init(project=project, name=name, config=config, id=DACOMPLETARE, resume=True)
-        # self.model.load_state_dict(torch.load(path))
+         
+        if self.args.backup:
+            wandb.init(project=project, id=self.args.run_id, resume="must")
+            if wandb.run.resumed:
+                print(f"Resuming run {wandb.run.id}")
+                self.model.load_state_dict(torch.load(self.args.backup_path))
+        else:
+            wandb.init(project=project, name=name, config=config)
         
         self.wandb_run_id = wandb.run.id
-        self.wand_run_name = wandb.run.name
