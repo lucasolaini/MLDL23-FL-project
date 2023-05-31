@@ -148,8 +148,6 @@ class Server:
             project = "Federated_setting_niid"
         else:
             project = "Federated_setting_iid"
-            
-        project = "prova"
         
         # assings a name to the run    
         name = "bs=" + str(self.args.bs) + "_" + \
