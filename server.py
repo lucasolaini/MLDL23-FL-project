@@ -112,14 +112,19 @@ class Server:
 
             if r % 20 == 0 and r != 0:
                 self.eval_train()
-                wandb.log({"Overall Train Accuracy": self.metrics['eval_train'].results['Overall Acc'] * 100, \
-                           "Mean Train Accuracy": self.metrics['eval_train'].results['Mean Acc'] * 100})
-                
                 
             self.test()
-
-            wandb.log({"Overall Test Accuracy": self.metrics['test'].results['Overall Acc'] * 100, \
-                       "Mean Test Accuracy": self.metrics['test'].results['Mean Acc'] * 100})
+            
+            if r % 20 == 0 and r != 0:
+                wandb.log({
+                    "Overall Train Accuracy": self.metrics['eval_train'].results['Overall Acc'] * 100, 
+                    "Mean Train Accuracy": self.metrics['eval_train'].results['Mean Acc'] * 100,
+                    "Overall Test Accuracy": self.metrics['test'].results['Overall Acc'] * 100, 
+                    "Mean Test Accuracy": self.metrics['test'].results['Mean Acc'] * 100})
+            else:
+                wandb.log({
+                    "Overall Test Accuracy": self.metrics['test'].results['Overall Acc'] * 100, 
+                    "Mean Test Accuracy": self.metrics['test'].results['Mean Acc'] * 100})
             
         wandb.finish()
         
