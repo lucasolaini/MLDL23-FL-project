@@ -110,7 +110,7 @@ class Server:
             self.model.load_state_dict(aggregated_state_dict)
             torch.save(self.model.state_dict(), self.args.backup_folder + '/' + self.wandb_run_id)
 
-            if r % 10 == 0 and r != 0:
+            if r % 20 == 0 and r != 0:
                 self.eval_train()
                 wandb.log({"Overall Train Accuracy": self.metrics['eval_train'].results['Overall Acc'] * 100, \
                            "Mean Train Accuracy": self.metrics['eval_train'].results['Mean Acc'] * 100})
