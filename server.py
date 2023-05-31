@@ -36,6 +36,16 @@ class Server:
             remaining_clients = self.train_clients.size - clients_fraction
             p = [prob / clients_fraction] * clients_fraction + [(1 - prob) / remaining_clients] * remaining_clients
             return np.random.choice(self.train_clients, num_clients, replace=False, p=p)
+        if strategy == 'powerofchoice':
+            datasets_lengths = [len(train_client.dataset) for train_client in self.train_clients]
+            p = datasets_lengths / sum(datasets_lengths)
+            A = np.random.choice(self.train_clients, self.args.d, replace=False, p=p)
+            losses = []
+            
+            for c in A:
+                losses.append(c.compute_loss())
+                
+            return A[(-losses).argsort][self.args.clients_per_round]
         else:
             raise NotImplementedError
 

@@ -89,3 +89,15 @@ class Client:
                 images, labels = images.cuda(), labels.cuda()
                 outputs = self._get_outputs(images)
                 self.update_metric(metric, outputs, labels)
+                
+    def compute_loss(self):
+        
+        self.model.eval()
+        
+        with torch.no_grad():
+            for i, (images, labels) in enumerate(self.train_loader):
+                images, labels = images.cuda(), labels.cuda()
+                outputs = self._get_outputs(images)
+                loss += self.criterion(outputs, labels)
+                
+        return loss.item().mean(axis=0)
