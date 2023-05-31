@@ -17,8 +17,8 @@ class Client:
         self.model = model
         self.train_loader = DataLoader(self.dataset, batch_size=self.args.bs, shuffle=True, drop_last=True) \
             if not test_client else None
-        self.test_loader = DataLoader(self.dataset, batch_size=1, shuffle=False)
-        self.criterion = nn.CrossEntropyLoss(ignore_index=255, reduction='mean') # reduction was 'none'
+        self.test_loader = DataLoader(self.dataset, batch_size=256, shuffle=False)
+        self.criterion = nn.CrossEntropyLoss(ignore_index=255, reduction='mean')
         self.reduction = HardNegativeMining() if self.args.hnm else MeanReduction()
 
     def __str__(self):
@@ -70,15 +70,22 @@ class Client:
 
         
 
-    def test(self, metric):
+    def test(self, metric, set):
         """
         This method tests the model on the local dataset of the client.
         :param metric: StreamMetric object
         """
         self.model.eval()
+        
+        if set == 'eval':
+            dataloader = self.train_loader
+        elif set == 'test':
+            dataloader = self.test_loader
+        else:
+            raise NotImplementedError
 
         with torch.no_grad():
-            for i, (images, labels) in enumerate(self.test_loader):
+            for i, (images, labels) in enumerate(dataloader):
                 images, labels = images.cuda(), labels.cuda()
                 outputs = self._get_outputs(images)
                 self.update_metric(metric, outputs, labels)

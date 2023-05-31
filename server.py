@@ -48,10 +48,11 @@ class Server:
         """
         updates = []
         dataset_lengths = []
+        model_state = copy.deepcopy(self.model.state_dict())
 
         for i, c in enumerate(clients):
             # update training client's model
-            c.model.load_state_dict(self.model.state_dict())
+            c.model.load_state_dict(model_state)
             
             dataset_length, parameters = c.train()
             updates.append(parameters)
@@ -99,32 +100,28 @@ class Server:
             self.model.load_state_dict(aggregated_state_dict)
             torch.save(self.model.state_dict(), self.args.backup_folder + '/' + self.wandb_run_id)
 
-            # self.eval_train()
+            if r % 10 == 0 and r != 0:
+                self.eval_train()
+                wandb.log({"Overall Train Accuracy": self.metrics['eval_train'].results['Overall Acc'] * 100, \
+                           "Mean Train Accuracy": self.metrics['eval_train'].results['Mean Acc'] * 100})
+                
+                
             self.test()
 
-            wandb.log({"Overall Accuracy": self.metrics['test'].results['Overall Acc'] * 100, \
-                       "Mean Accuracy": self.metrics['test'].results['Mean Acc'] * 100})
+            wandb.log({"Overall Test Accuracy": self.metrics['test'].results['Overall Acc'] * 100, \
+                       "Mean Test Accuracy": self.metrics['test'].results['Mean Acc'] * 100})
             
         wandb.finish()
-
-    def update_client_state(self, update):
-        for c in self.train_clients:
-            c.model.load_state_dict(update)
-
-        for c in self.test_clients:
-            c.model.load_state_dict(update)
-
+        
     def eval_train(self):
         """
         This method handles the evaluation on the train clients
         """
         for i, c in enumerate(self.train_clients):
-            print(f'Training client {i}: {c.name}')
-            c.test(self.metrics['eval_train'])
+            c.model.load_state_dict(self.model.state_dict())
+            c.test(self.metrics['eval_train'], 'eval')
 
-        print(f'Evaluation on train clients')
         self.metrics['eval_train'].get_results()
-        print(self.metrics['eval_train'].__str__())
 
     def test(self):
         """
@@ -134,7 +131,7 @@ class Server:
 
             # update test client's model
             c.model.load_state_dict(self.model.state_dict())
-            c.test(self.metrics['test'])
+            c.test(self.metrics['test'], 'test')
 
         self.metrics['test'].get_results()
         
