@@ -4,9 +4,35 @@ from torchvision import datasets
 from torchvision import transforms
 from torch.utils.data import DataLoader
 from torch.utils.data import random_split
-from models.cnn import AlexNet
 from sklearn.model_selection import ParameterGrid
+from models.cnn import CNN
+from main import get_datasets
+from utils.args import get_parser
 import wandb
+import os
+import json
+from collections import defaultdict
+
+
+def read_femnist_dir(data_dir):
+    data = defaultdict(lambda: {})
+    files = os.listdir(data_dir)
+    files = [f for f in files if f.endswith('.json')]
+    for f in files:
+        file_path = os.path.join(data_dir, f)
+        with open(file_path, 'r') as inf:
+            cdata = json.load(inf)
+            
+        for users, data in cdata['user_data'].items():
+            for user, xy in data.items():
+                for d in xy:
+                    data[user].append(d)
+                    
+    return data
+
+
+def read_femnist_data(train_data_dir, test_data_dir):
+    return read_femnist_dir(train_data_dir), read_femnist_dir(test_data_dir)
 
 def get_loss_function():
     loss_function = nn.CrossEntropyLoss()
@@ -56,20 +82,25 @@ def test(net, dataloader, loss_function, device='cuda:0'):
             cumulative_accuracy += predicted.eq(targets).sum().item()
     return cumulative_loss/samples, cumulative_accuracy/samples*100
 
-def get_train_valid_test_dataloader(train_batch_size, test_batch_size=256):
+def get_train_valid_test_dataloader(args, train_batch_size, test_batch_size=256):
 
     # Prepare data transformations and then combine them sequentially
 
-    transform = transforms.Compose([ # Chains the below transformations into one.
-        # transforms.Resize((227,227)), # Resizes input images to have them have the same size. WHY 227x227???
-        transforms.ToTensor(), # Converts Numpy to Pytorch Tensor
-        transforms.Normalize(mean=[0.5], std=[0.5]) # Normalizes the Tensors between [-1, 1]
-    ])
+    #transform = transforms.Compose([ # Chains the below transformations into one.
+    #    transforms.ToTensor(), # Converts Numpy to Pytorch Tensor
+    #    transforms.Normalize(mean=[0.5], std=[0.5]) # Normalizes the Tensors between [-1, 1]
+    #])
 
     # Load data
+    niid = False
+    train_data_dir = os.path.join('data', 'femnist', 'data', 'niid' if niid else 'iid', 'train')
+    test_data_dir = os.path.join('data', 'femnist', 'data', 'niid' if niid else 'iid', 'test')
 
-    full_training_data = datasets.EMNIST('./data', split='balanced', train=True, transform=transform, download=True)
-    test_data = datasets.EMNIST('./data', split='balanced', train=False, transform=transform, download=True)
+    train_data , test_data = read_femnist_data(train_data_dir, test_data_dir)
+    
+    print(len(train_data))
+    print(len(test_data))
+    return
 
     # Create train and validation splits
 
@@ -87,12 +118,12 @@ def get_train_valid_test_dataloader(train_batch_size, test_batch_size=256):
     
     return train_dataloader, valid_dataloader, test_dataloader
 
-def main(batch_size=64, device='cuda:0', learning_rate=10**-2, weight_decay=10**-6, momentum=0.9, epochs=50, fileNo=0):
+def main(args, batch_size=64, device='cuda:0', learning_rate=10**-2, weight_decay=10**-6, momentum=0.9, epochs=50):
 
     # open a file in which the results are written
-    f = open(f'./results/centralized_setting/results{fileNo}.txt', 'a')
-    f.write(f'Parameters:\n')
-    f.write(f'\t learning_rate: {learning_rate}, weight_decay: {weight_decay}, momentum: {momentum}, epochs: {epochs}\n\n')
+    #f = open(f'./results/centralized_setting/results{fileNo}.txt', 'a')
+    #f.write(f'Parameters:\n')
+    #f.write(f'\t learning_rate: {learning_rate}, weight_decay: {weight_decay}, momentum: {momentum}, epochs: {epochs}\n\n')
 
     # open wandb and sets all the parameters of this configuration
     
@@ -113,10 +144,11 @@ def main(batch_size=64, device='cuda:0', learning_rate=10**-2, weight_decay=10**
         })
 
     # load the dataset and divedes it in training set, validation set and test set
-    train_loader, val_loader, test_loader = get_train_valid_test_dataloader(train_batch_size=batch_size)
+    train_loader, val_loader, test_loader = get_train_valid_test_dataloader(train_batch_size=batch_size, args=args)
+    return
 
     # model
-    net = AlexNet(num_classes=62).to(device)
+    net = CNN(num_classes=62).to(device)
 
     # optimizer
     optimizer = get_optimizer(net, learning_rate, weight_decay, momentum)
@@ -132,11 +164,11 @@ def main(batch_size=64, device='cuda:0', learning_rate=10**-2, weight_decay=10**
         # test on the validation set
         val_loss, val_accuracy = test(net, val_loader, loss_function, device)
 
-        f.write(f'Epoch: {e+1}\n')
-        f.write(f'\t Training loss {train_loss:.5f}, Training accuracy {train_accuracy:.2f}\n')
-        f.write(f'\t Validation loss {val_loss:.5f}, Validation accuracy {val_accuracy:.2f}\n')
-        f.write('-----------------------------------------------------\n')
-        f.write('After training:\n')
+        #f.write(f'Epoch: {e+1}\n')
+        #f.write(f'\t Training loss {train_loss:.5f}, Training accuracy {train_accuracy:.2f}\n')
+        #f.write(f'\t Validation loss {val_loss:.5f}, Validation accuracy {val_accuracy:.2f}\n')
+        #f.write('-----------------------------------------------------\n')
+        #f.write('After training:\n')
 
         # test on the training set after training
         train_loss, train_accuracy = test(net, train_loader, loss_function, device)
@@ -147,24 +179,29 @@ def main(batch_size=64, device='cuda:0', learning_rate=10**-2, weight_decay=10**
         # test on the test set after training
         test_loss, test_accuracy = test(net, test_loader, loss_function, device)
 
-        f.write(f'\t Training loss {train_loss:.5f}, Training accuracy {train_accuracy:.2f}\n')
-        f.write(f'\t Validation loss {val_loss:.5f}, Validation accuracy {val_accuracy:.2f}\n')
-        f.write(f'\t Test loss {test_loss:.5f}, Test accuracy {test_accuracy:.2f}\n\n')
-        f.write('-----------------------------------------------------\n\n')
+        #f.write(f'\t Training loss {train_loss:.5f}, Training accuracy {train_accuracy:.2f}\n')
+        #f.write(f'\t Validation loss {val_loss:.5f}, Validation accuracy {val_accuracy:.2f}\n')
+        #f.write(f'\t Test loss {test_loss:.5f}, Test accuracy {test_accuracy:.2f}\n\n')
+        #f.write('-----------------------------------------------------\n\n')
 
         wandb.log({"Accuracy": test_accuracy, "Loss": test_loss})
 
     # close the file after all the infos have been written
-    f.close()
+    # f.close()
     wandb.finish()
 
 if __name__ == '__main__':
-        # hyperparameters
+    
+    #parser = get_parser()
+    #args = parser.parse_args() 
+    args = None
+       
+    # hyperparameters
     param_grid = {
-        'batch_size': [64, 128],
-        'learning_rate': [10**-3, 10**-2, 10**-1, 1],
+        'batch_size': [32, 64, 128],
+        'learning_rate': [10**-2, 10**-1],
         'weight_decay' : [10**-6, 10**-4, 10**-2],
-        'momentum' : [0.5, 0.7, 0.9],
+        'momentum' : [0.7, 0.9, 0.99],
         'epochs': [1, 5, 10]
     }
 
@@ -175,4 +212,5 @@ if __name__ == '__main__':
 
     # hyperparameters tuning
     for i, param in enumerate(params):
-        main(**param, device='cpu', fileNo=i+1)
+        main(args=args, **param)
+        break
