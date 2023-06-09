@@ -12,10 +12,14 @@ import wandb
 import os
 import json
 from collections import defaultdict
+from datasets.femnist import Femnist
+import datasets.np_transforms as nptr
 
 
 def read_femnist_dir(data_dir):
     data = defaultdict(lambda: {})
+    data['x'] = []
+    data['y'] = []
     files = os.listdir(data_dir)
     files = [f for f in files if f.endswith('.json')]
     for f in files:
@@ -23,10 +27,10 @@ def read_femnist_dir(data_dir):
         with open(file_path, 'r') as inf:
             cdata = json.load(inf)
             
-        for users, data in cdata['user_data'].items():
-            for user, xy in data.items():
-                for d in xy:
-                    data[user].append(d)
+        for users, d in cdata['user_data'].items():
+            for key, values in d.items():
+                for value in values:
+                  data[key].append(value)
                     
     return data
 
@@ -86,10 +90,14 @@ def get_train_valid_test_dataloader(args, train_batch_size, test_batch_size=256)
 
     # Prepare data transformations and then combine them sequentially
 
-    #transform = transforms.Compose([ # Chains the below transformations into one.
-    #    transforms.ToTensor(), # Converts Numpy to Pytorch Tensor
-    #    transforms.Normalize(mean=[0.5], std=[0.5]) # Normalizes the Tensors between [-1, 1]
-    #])
+    train_transforms = nptr.Compose([
+        nptr.ToTensor(),
+        nptr.Normalize((0.5,), (0.5,)),
+    ])
+    test_transforms = nptr.Compose([
+        nptr.ToTensor(),
+        nptr.Normalize((0.5,), (0.5,)),
+    ])
 
     # Load data
     niid = False
@@ -97,10 +105,9 @@ def get_train_valid_test_dataloader(args, train_batch_size, test_batch_size=256)
     test_data_dir = os.path.join('data', 'femnist', 'data', 'niid' if niid else 'iid', 'test')
 
     train_data , test_data = read_femnist_data(train_data_dir, test_data_dir)
-    
-    print(len(train_data))
-    print(len(test_data))
-    return
+
+    full_training_data = Femnist(train_data, train_transforms, '')
+    test_data = Femnist(test_data, test_transforms, '')
 
     # Create train and validation splits
 
@@ -118,7 +125,7 @@ def get_train_valid_test_dataloader(args, train_batch_size, test_batch_size=256)
     
     return train_dataloader, valid_dataloader, test_dataloader
 
-def main(args, batch_size=64, device='cuda:0', learning_rate=10**-2, weight_decay=10**-6, momentum=0.9, epochs=50):
+def main(batch_size=64, device='cuda:0', learning_rate=10**-2, weight_decay=10**-6, momentum=0.9, epochs=50):
 
     # open a file in which the results are written
     #f = open(f'./results/centralized_setting/results{fileNo}.txt', 'a')
@@ -144,8 +151,7 @@ def main(args, batch_size=64, device='cuda:0', learning_rate=10**-2, weight_deca
         })
 
     # load the dataset and divedes it in training set, validation set and test set
-    train_loader, val_loader, test_loader = get_train_valid_test_dataloader(train_batch_size=batch_size, args=args)
-    return
+    train_loader, val_loader, test_loader = get_train_valid_test_dataloader(train_batch_size=batch_size)
 
     # model
     net = CNN(num_classes=62).to(device)
@@ -184,17 +190,15 @@ def main(args, batch_size=64, device='cuda:0', learning_rate=10**-2, weight_deca
         #f.write(f'\t Test loss {test_loss:.5f}, Test accuracy {test_accuracy:.2f}\n\n')
         #f.write('-----------------------------------------------------\n\n')
 
-        wandb.log({"Accuracy": test_accuracy, "Loss": test_loss})
+        wandb.log({"Train Accuracy": train_accuracy, "Train Loss": train_loss,
+                   "Validation Accuracy": val_accuracy, "Validation Loss": val_loss,
+                   "Test Accuracy": test_accuracy, "Test Loss": test_loss})
 
     # close the file after all the infos have been written
     # f.close()
     wandb.finish()
 
 if __name__ == '__main__':
-    
-    #parser = get_parser()
-    #args = parser.parse_args() 
-    args = None
        
     # hyperparameters
     param_grid = {
@@ -212,5 +216,4 @@ if __name__ == '__main__':
 
     # hyperparameters tuning
     for i, param in enumerate(params):
-        main(args=args, **param)
-        break
+        main(**param)
