@@ -86,7 +86,7 @@ def test(net, dataloader, loss_function, device='cuda:0'):
             cumulative_accuracy += predicted.eq(targets).sum().item()
     return cumulative_loss/samples, cumulative_accuracy/samples*100
 
-def get_train_valid_test_dataloader(args, train_batch_size, test_batch_size=256):
+def get_train_valid_test_dataloader(train_batch_size, test_batch_size=256):
 
     # Prepare data transformations and then combine them sequentially
 
