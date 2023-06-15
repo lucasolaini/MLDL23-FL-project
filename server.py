@@ -19,31 +19,33 @@ class Server:
         self.wandb_run_id = ''
 
     def select_clients(self, strategy='uniform'):
+        num_clients = min(self.args.clients_per_round, len(self.train_clients))
         if strategy == 'uniform':
-            num_clients = min(self.args.clients_per_round, len(self.train_clients))
             return np.random.choice(self.train_clients, num_clients, replace=False)
         if strategy == 'high':
             prob = 0.5
             frac = 0.1
-            clients_fraction = round(self.train_clients.size * frac)
-            remaining_clients = self.train_clients.size - clients_fraction
+            clients_fraction = round(len(self.train_clients) * frac)
+            remaining_clients = len(self.train_clients) - clients_fraction
             p = [prob / clients_fraction] * clients_fraction + [(1 - prob) / remaining_clients] * remaining_clients
             return np.random.choice(self.train_clients, num_clients, replace=False, p=p)
         if strategy == 'low':
             prob = 0.0001
             frac = 0.3
-            clients_fraction = round(self.train_clients.size * frac)
-            remaining_clients = self.train_clients.size - clients_fraction
+            clients_fraction = round(len(self.train_clients) * frac)
+            remaining_clients = len(self.train_clients) - clients_fraction
             p = [prob / clients_fraction] * clients_fraction + [(1 - prob) / remaining_clients] * remaining_clients
             return np.random.choice(self.train_clients, num_clients, replace=False, p=p)
         if strategy == 'powerofchoice':
             datasets_lengths = [len(train_client.dataset) for train_client in self.train_clients]
-            p = datasets_lengths / sum(datasets_lengths)
+            p = np.array(datasets_lengths) / sum(datasets_lengths)
             A = np.random.choice(self.train_clients, self.args.d, replace=False, p=p)
             losses = []
             
             for c in A:
                 losses.append(c.compute_loss())
+                
+            losses = np.array(losses)
                 
             return A[(-losses).argsort][self.args.clients_per_round]
         else:
@@ -102,7 +104,7 @@ class Server:
 
         for r in range(self.args.num_rounds):
             print(f'Round {r}')
-            clients_selected = self.select_clients()
+            clients_selected = self.select_clients(self.args.clients_selection_strategy)
             updates = self.train_round(clients_selected)
 
             aggregated_state_dict = self.aggregate(updates)
