@@ -47,7 +47,7 @@ class Server:
                 
             losses = np.array(losses)
                 
-            return A[(-losses).argsort()][self.args.clients_per_round]
+            return A[(-losses).argsort()][:self.args.clients_per_round]
         else:
             raise NotImplementedError
 
