@@ -8,47 +8,54 @@ import wandb
 
 class Server:
 
-    def __init__(self, args, train_clients, test_clients, model, metrics):
+    def __init__(self, args, train_clients, test_clients, model, metrics, leave_one_out):
         self.args = args
         self.train_clients = train_clients
         self.test_clients = test_clients
         self.model = model
         self.metrics = metrics
+        self.leave_one_out = leave_one_out
         self.model_params_dict = copy.deepcopy(self.model.state_dict())
         
         self.wandb_run_id = ''
 
     def select_clients(self, strategy='uniform'):
+        num_clients = min(self.args.clients_per_round, len(self.train_clients))
         if strategy == 'uniform':
-            num_clients = min(self.args.clients_per_round, len(self.train_clients))
             return np.random.choice(self.train_clients, num_clients, replace=False)
         if strategy == 'high':
             prob = 0.5
             frac = 0.1
-            clients_fraction = round(self.train_clients.size * frac)
-            remaining_clients = self.train_clients.size - clients_fraction
+            clients_fraction = round(len(self.train_clients) * frac)
+            remaining_clients = len(self.train_clients) - clients_fraction
             p = [prob / clients_fraction] * clients_fraction + [(1 - prob) / remaining_clients] * remaining_clients
             return np.random.choice(self.train_clients, num_clients, replace=False, p=p)
         if strategy == 'low':
             prob = 0.0001
             frac = 0.3
-            clients_fraction = round(self.train_clients.size * frac)
-            remaining_clients = self.train_clients.size - clients_fraction
+            clients_fraction = round(len(self.train_clients) * frac)
+            remaining_clients = len(self.train_clients) - clients_fraction
             p = [prob / clients_fraction] * clients_fraction + [(1 - prob) / remaining_clients] * remaining_clients
             return np.random.choice(self.train_clients, num_clients, replace=False, p=p)
         if strategy == 'powerofchoice':
             datasets_lengths = [len(train_client.dataset) for train_client in self.train_clients]
-            p = datasets_lengths / sum(datasets_lengths)
+            p = np.array(datasets_lengths) / sum(datasets_lengths)
             A = np.random.choice(self.train_clients, self.args.d, replace=False, p=p)
             losses = []
             
             for c in A:
                 losses.append(c.compute_loss())
                 
+            losses = np.array(losses)
+                
             return A[(-losses).argsort][self.args.clients_per_round]
         else:
             raise NotImplementedError
 
+    def select_clients_domGen(self, leave_one_out):
+        num_clients = min(self.args.clients_per_round, len(self.train_clients))
+        return np.random.choice([x for i,x in enumerate(self.train_clients) if i not in range(int(leave_one_out*len(self.train_clients)/6), \
+                                                        int((leave_one_out+1)*len(self.train_clients)/6))], num_clients, replace=False)
 
     def train_round(self, clients):
         """
@@ -102,7 +109,10 @@ class Server:
 
         for r in range(self.args.num_rounds):
             print(f'Round {r}')
-            clients_selected = self.select_clients()
+            if self.leave_one_out is None:
+                clients_selected = self.select_clients(self.args.clients_selection_strategy) 
+            else:
+                clients_selected = self.select_clients_domGen(self.leave_one_out)
             updates = self.train_round(clients_selected)
 
             aggregated_state_dict = self.aggregate(updates)
@@ -111,8 +121,12 @@ class Server:
             torch.save(self.model.state_dict(), self.args.backup_folder + '/' + self.wandb_run_id)
 
             if r % 20 == 0 and r != 0:
-                self.eval_train()
-                
+                if self.leave_one_out is None:
+                    self.eval_train()
+                else:
+                    self.eval_train_domGen(self.leave_one_out)
+
+            print('Evaluation on the test set of each client')   
             self.test()
             
             if r % 20 == 0 and r != 0:
@@ -127,7 +141,7 @@ class Server:
                     "Mean Test Accuracy": self.metrics['test'].results['Mean Acc'] * 100})
             
         wandb.finish()
-        
+
     def eval_train(self):
         """
         This method handles the evaluation on the train clients
@@ -137,6 +151,16 @@ class Server:
             c.test(self.metrics['eval_train'], 'eval')
 
         self.metrics['eval_train'].get_results()
+
+    def eval_train_domGen(self, leave_one_out):
+        for i, c in enumerate(self.train_clients[int(leave_one_out*len(self.train_clients)/6) : int((leave_one_out+1)*len(self.train_clients)/6)]):
+            c.model.load_state_dict(self.model.state_dict())
+            print(f'Training client {i}: {c.name}')
+            c.test(self.metrics['eval_train'], 'eval')
+
+        print(f'Evaluation on train clients')
+        self.metrics['eval_train'].get_results()
+        print(self.metrics['eval_train'].__str__())
 
     def test(self):
         """
@@ -164,8 +188,11 @@ class Server:
         else:
             project = "Federated_setting_iid"
         
+        project = "Rotated_FEMNIST"
+
         # assings a name to the run    
-        name = "bs=" + str(self.args.bs) + "_" + \
+        name = str(self.leave_one_out) + "_" + \
+               "bs=" + str(self.args.bs) + "_" + \
                "lr=" + str(self.args.lr) + "_" + \
                "wd=" + str(self.args.wd) + "_" + \
                "m=" + str(self.args.m) + "_" + \

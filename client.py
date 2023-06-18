@@ -91,13 +91,18 @@ class Client:
                 self.update_metric(metric, outputs, labels)
                 
     def compute_loss(self):
-        
+        loss_fn = nn.CrossEntropyLoss(reduction='sum')
         self.model.eval()
-        
+        loss = 0
+        cnt = 0
         with torch.no_grad():
             for i, (images, labels) in enumerate(self.train_loader):
                 images, labels = images.cuda(), labels.cuda()
                 outputs = self._get_outputs(images)
-                loss += self.criterion(outputs, labels)
-                
-        return loss.item().mean(axis=0)
+                loss += loss_fn(outputs, labels).item()
+                cnt += labels.size(0)
+        
+        if cnt > 0:      
+            return loss /cnt
+        else:
+            return loss

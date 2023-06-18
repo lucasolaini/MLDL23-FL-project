@@ -262,7 +262,8 @@ class RandomRotation(object):
 
         return angle
 
-    def __call__(self, img, lbl):
+    #def __call__(self, img, lbl):
+    def __call__(self, img):
         """
             img (PIL Image): Image to be rotated.
             lbl (PIL Image): Label to be rotated.
@@ -270,14 +271,17 @@ class RandomRotation(object):
             PIL Image: Rotated image.
             PIL Image: Rotated label.
         """
-
+        
         angle = self.get_params(self.degrees)
+        '''
         if lbl is not None:
             return F.rotate(img, angle, self.resample, self.expand, self.center), \
                 F.rotate(lbl, angle, self.resample, self.expand, self.center)
         else:
             return F.rotate(img, angle, self.resample, self.expand, self.center)
-
+        '''
+        return F.rotate(img, angle, self.resample, self.expand, self.center) ##### modificato
+    
     def __repr__(self):
         format_string = self.__class__.__name__ + '(degrees={0}'.format(self.degrees)
         format_string += ', resample={0}'.format(self.resample)
