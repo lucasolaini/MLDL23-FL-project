@@ -24,4 +24,6 @@ def get_parser():
     parser.add_argument('--backup', action='store_true', default=False, help='Decides if to load the model state or not')
     parser.add_argument('--backup_path', type=str, default='', help='backup file path. Use only if --backup is True')
     parser.add_argument('--run_id', type=str, default='', help='wandb: id of the run interrupted. Use only if --backup is True')
+    parser.add_argument('--clients_selection_strategy', type=str, choices=['uniform', 'high', 'low', 'powerofchoice'], default='uniform', help='clients selection strategy')
+    parser.add_argument('--d', type=int, default=20, help='clients selected in power of choice')
     return parser
