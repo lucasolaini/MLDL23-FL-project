@@ -111,10 +111,11 @@ class Client:
         
     def featurize(self, x, num_samples=1, return_dist=False):
         z_params = self.model(x)
-        z_mu = z_params[:,:self.z_dim]
-        z_sigma = F.softplus(z_params[:,self.z_dim:])
+        print(z_params.size())
+        z_mu = z_params[:,:512]
+        z_sigma = F.softplus(z_params[:,512:])
         z_dist = distributions.Independent(distributions.normal.Normal(z_mu,z_sigma),1)
-        z = z_dist.rsample([num_samples]).view([-1,self.z_dim])
+        z = z_dist.rsample([num_samples]).view([-1, 512])
         
         if return_dist:
             return z, (z_mu,z_sigma)
@@ -132,11 +133,12 @@ class Client:
         
         for cur_step, (images, labels) in enumerate(self.train_loader):
             images, labels = images.cuda(), labels.cuda() 
-            outputs = self._get_outputs(images)
+            z, (z_mu,z_sigma) = self.featurize(images, return_dist=True)
+            outputs = self._get_outputs(z)
             loss = self.criterion(outputs, labels)
             
             # Controllare da qui
-            z, (z_mu,z_sigma) = self.featurize(images, return_dist=True)
+           
             obj = loss
             regL2R = torch.zeros_like(obj)
             regCMI = torch.zeros_like(obj)
@@ -163,6 +165,6 @@ class Client:
         optimizer = torch.optim.SGD(self.model.parameters(), lr=self.args.lr, weight_decay=self.args.wd, momentum=self.args.m)
 
         for epoch in range(self.args.num_epochs):
-            self.run_epoch(epoch, optimizer)
+            self.run_epoch_FedSR(epoch, optimizer)
 
         return len(self.dataset), copy.deepcopy(self.model.state_dict())
