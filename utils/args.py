@@ -28,4 +28,5 @@ def get_parser():
     parser.add_argument('--d', type=int, default=20, help='clients selected in power of choice')
     parser.add_argument('--dom_gen', action='store_true', default=False, help='use the rotated dataset if True')
     parser.add_argument('--leave_one_out', type=int, default=0, help='selects which rotated set is not used for training')
+    parser.add_argument('--FedSR', action='store_true', default=False, help='use FedSR if True')
     return parser

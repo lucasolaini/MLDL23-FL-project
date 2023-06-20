@@ -71,7 +71,11 @@ class Server:
             # update training client's model
             c.model.load_state_dict(model_state)
             
-            dataset_length, parameters = c.train()
+            if not self.args.FedSR:
+                dataset_length, parameters = c.train()
+            else:
+                dataset_length, parameters = c.train_FedSR()
+            
             updates.append(parameters)
             dataset_lengths.append(dataset_length)
 
