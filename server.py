@@ -8,7 +8,7 @@ import wandb
 
 class Server:
 
-    def __init__(self, args, train_clients, test_clients, model, metrics, leave_one_out):
+    def __init__(self, args, train_clients, test_clients, model, metrics):
         self.args = args
         self.train_clients = train_clients
         self.test_clients = test_clients
@@ -130,7 +130,6 @@ class Server:
                 else:
                     self.eval_train_domGen(self.leave_one_out)
 
-            print('Evaluation on the test set of each client')   
             self.test()
             
             if r % 20 == 0 and r != 0:

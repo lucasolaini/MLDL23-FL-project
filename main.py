@@ -127,7 +127,7 @@ def get_datasets(args):
         
         train_datasets, test_datasets = [], []
 
-        if args.domain_gen:
+        if args.dom_gen:
             rotation = [0, 15, 30, 45, 60, 75]
             n_clients_per_set = int(round(1002 / 6, 0))
             n_clients_total = 1002
