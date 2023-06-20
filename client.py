@@ -6,6 +6,8 @@ from collections import defaultdict
 from torch.utils.data import DataLoader
 
 from utils.utils import HardNegativeMining, MeanReduction
+import torch.nn.functional as F
+import torch.distributions as distributions
 
 
 class Client:
@@ -106,3 +108,61 @@ class Client:
             return loss /cnt
         else:
             return loss
+        
+    def featurize(self, x, num_samples=1, return_dist=False):
+        z_params = self.model(x)
+        z_mu = z_params[:,:self.z_dim]
+        z_sigma = F.softplus(z_params[:,self.z_dim:])
+        z_dist = distributions.Independent(distributions.normal.Normal(z_mu,z_sigma),1)
+        z = z_dist.rsample([num_samples]).view([-1,self.z_dim])
+        
+        if return_dist:
+            return z, (z_mu,z_sigma)
+        else:
+            return z
+        
+    def run_epoch_FedSR(self, cur_epoch, optimizer):
+        
+        L2R_coeff = 0.01
+        CMI_coeff = 0.001
+        
+        r_mu = nn.Parameter(torch.zeros(62, 512))
+        r_sigma = nn.Parameter(torch.ones(62, 512))
+        C = nn.Parameter(torch.ones([]))
+        
+        for cur_step, (images, labels) in enumerate(self.train_loader):
+            images, labels = images.cuda(), labels.cuda() 
+            outputs = self._get_outputs(images)
+            loss = self.criterion(outputs, labels)
+            
+            # Controllare da qui
+            z, (z_mu,z_sigma) = self.featurize(images, return_dist=True)
+            obj = loss
+            regL2R = torch.zeros_like(obj)
+            regCMI = torch.zeros_like(obj)
+            if L2R_coeff != 0.0:
+                regL2R = z.norm(dim=1).mean()
+                obj = obj + L2R_coeff*regL2R
+            if CMI_coeff != 0.0:
+                r_sigma_softplus = F.softplus(r_sigma)
+                r_mu = self.r_mu[labels]
+                r_sigma = r_sigma_softplus[labels]
+                z_mu_scaled = z_mu*C
+                z_sigma_scaled = z_sigma*C
+                regCMI = torch.log(r_sigma) - torch.log(z_sigma_scaled) + \
+                        (z_sigma_scaled**2+(z_mu_scaled-r_mu)**2)/(2*r_sigma**2) - 0.5
+                regCMI = regCMI.sum(1).mean()
+                obj = obj + CMI_coeff*regCMI
+                
+            optimizer.zero_grad()
+            obj.backward()
+            optimizer.step()
+        
+    def train_FedSR(self):
+        self.model.train()
+        optimizer = torch.optim.SGD(self.model.parameters(), lr=self.args.lr, weight_decay=self.args.wd, momentum=self.args.m)
+
+        for epoch in range(self.args.num_epochs):
+            self.run_epoch(epoch, optimizer)
+
+        return len(self.dataset), copy.deepcopy(self.model.state_dict())

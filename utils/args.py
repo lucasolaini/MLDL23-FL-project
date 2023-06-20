@@ -26,4 +26,6 @@ def get_parser():
     parser.add_argument('--run_id', type=str, default='', help='wandb: id of the run interrupted. Use only if --backup is True')
     parser.add_argument('--clients_selection_strategy', type=str, choices=['uniform', 'high', 'low', 'powerofchoice'], default='uniform', help='clients selection strategy')
     parser.add_argument('--d', type=int, default=20, help='clients selected in power of choice')
+    parser.add_argument('--dom_gen', action='store_true', default=False, help='use the rotated dataset if True')
+    parser.add_argument('--leave_one_out', type=int, default=0, help='selects which rotated set is not used for training')
     return parser

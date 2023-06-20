@@ -22,8 +22,6 @@ from models.deeplabv3 import deeplabv3_mobilenetv2
 from utils.stream_metrics import StreamSegMetrics, StreamClsMetrics
 from models.cnn import CNN
 
-import matplotlib.pyplot as plt
-
 
 def set_seed(random_seed):
     random.seed(random_seed)
@@ -100,7 +98,7 @@ def read_femnist_data(train_data_dir, test_data_dir):
     return read_femnist_dir(train_data_dir), read_femnist_dir(test_data_dir)
 
 
-def get_datasets(args, domainGen):
+def get_datasets(args):
     train_datasets = []
     train_transforms, test_transforms = get_transforms(args)
 
@@ -129,18 +127,16 @@ def get_datasets(args, domainGen):
         
         train_datasets, test_datasets = [], []
 
-        if domainGen == 1:
-            rotation = [0, 15, 30, 45, 60, 75]  
-            n_user = len(train_data.keys())
+        if args.domain_gen:
+            rotation = [0, 15, 30, 45, 60, 75]
             n_clients_per_set = int(round(1002 / 6, 0))
-            n_clients_total = 1002 #1002 in case we use 3600 clients
+            n_clients_total = 1002
             print(f"Clients per set: {n_clients_per_set}")
             cont_clients = 0
-            for user, data in train_data.items(): #dizionario che ha come keys gli user (0 : n_user)
+            for user, data in train_data.items():
                 if cont_clients >= n_clients_total:
                     break
                 train_transforms, test_transforms = get_transforms(args, rotation[int(cont_clients / n_clients_per_set)])
-                #print(rotation[int(cont_clients / n_clients_per_set)])
                 cont_clients += 1
                 train_datasets.append(Femnist(data, train_transforms, user))
             for user, data in test_data.items():
@@ -148,7 +144,7 @@ def get_datasets(args, domainGen):
             
         else:
             train_transforms, test_transforms = get_transforms(args)
-            for user, data in train_data.items(): #dizionario che ha come keys gli user (0 : n_user)
+            for user, data in train_data.items():
                 train_datasets.append(Femnist(data, train_transforms, user))
             for user, data in test_data.items():
                 test_datasets.append(Femnist(data, test_transforms, user))
@@ -200,20 +196,15 @@ def main():
     print('Done.')
 
     print('Generate datasets...')
-    domainGen = 1 #0 for normal run, 1 for rotated dataset
-    leave_one_out = 4 #0,1,2,3,4,5 or None (it represents which one of the six domains is used for the evaluation)
-    train_datasets, test_datasets = get_datasets(args, domainGen)
+    train_datasets, test_datasets = get_datasets(args)
     print('Done.')
 
     metrics = set_metrics(args)
     train_clients, test_clients = gen_clients(args, train_datasets, test_datasets, model)
     print(f"Numero train clients: {len(train_clients)}")
     print(f"Numero test clients: {len(test_clients)}")
-    #image,label = train_clients[300].dataset.__getitem__(0)
-    #plt.imshow(image.permute(1, 2, 0))
-    #plt.show()
 
-    server = Server(args, train_clients, test_clients, model, metrics, leave_one_out)
+    server = Server(args, train_clients, test_clients, model, metrics)
     server.train()
 
 

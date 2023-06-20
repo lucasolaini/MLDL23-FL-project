@@ -14,7 +14,7 @@ class Server:
         self.test_clients = test_clients
         self.model = model
         self.metrics = metrics
-        self.leave_one_out = leave_one_out
+        self.leave_one_out = args.leave_one_out
         self.model_params_dict = copy.deepcopy(self.model.state_dict())
         
         self.wandb_run_id = ''
