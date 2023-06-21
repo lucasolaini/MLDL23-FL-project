@@ -191,7 +191,7 @@ class Server:
         else:
             project = "Federated_setting_iid"
         
-        project = "Rotated_FEMNIST"
+        project = "FedSR"
 
         # assings a name to the run    
         name = str(self.leave_one_out) + "_" + \

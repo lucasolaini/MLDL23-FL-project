@@ -16,12 +16,20 @@ class Client:
         self.args = args
         self.dataset = dataset
         self.name = self.dataset.client_name
-        self.model = model
+        
         self.train_loader = DataLoader(self.dataset, batch_size=self.args.bs, shuffle=True, drop_last=True) \
             if not test_client else None
         self.test_loader = DataLoader(self.dataset, batch_size=1024, shuffle=False)
         self.criterion = nn.CrossEntropyLoss(ignore_index=255, reduction='mean')
         self.reduction = HardNegativeMining() if self.args.hnm else MeanReduction()
+        
+        if not args.FedSR:
+            self.model = model
+        else:
+            model.fc1 = lambda x: x
+            self.net = model
+            self.cls = nn.Linear(1024, 62)
+            self.model = nn.Sequential(self.net, self.cls)
 
     def __str__(self):
         return self.name
@@ -110,12 +118,11 @@ class Client:
             return loss
         
     def featurize(self, x, num_samples=1, return_dist=False):
-        z_params = self.model(x)
-        print(z_params.size())
-        z_mu = z_params[:,:512]
-        z_sigma = F.softplus(z_params[:,512:])
+        z_params = self.net(x)
+        z_mu = z_params[:,:1024]
+        z_sigma = F.softplus(z_params[:,1024:])
         z_dist = distributions.Independent(distributions.normal.Normal(z_mu,z_sigma),1)
-        z = z_dist.rsample([num_samples]).view([-1, 512])
+        z = z_dist.rsample([num_samples]).view([-1, 1024])
         
         if return_dist:
             return z, (z_mu,z_sigma)
@@ -127,17 +134,15 @@ class Client:
         L2R_coeff = 0.01
         CMI_coeff = 0.001
         
-        r_mu = nn.Parameter(torch.zeros(62, 512))
-        r_sigma = nn.Parameter(torch.ones(62, 512))
+        r_mu = nn.Parameter(torch.zeros(62, 1024))
+        r_sigma = nn.Parameter(torch.ones(62, 1024))
         C = nn.Parameter(torch.ones([]))
         
         for cur_step, (images, labels) in enumerate(self.train_loader):
             images, labels = images.cuda(), labels.cuda() 
             z, (z_mu,z_sigma) = self.featurize(images, return_dist=True)
-            outputs = self._get_outputs(z)
+            outputs = self.cls(z)
             loss = self.criterion(outputs, labels)
-            
-            # Controllare da qui
            
             obj = loss
             regL2R = torch.zeros_like(obj)
@@ -147,7 +152,7 @@ class Client:
                 obj = obj + L2R_coeff*regL2R
             if CMI_coeff != 0.0:
                 r_sigma_softplus = F.softplus(r_sigma)
-                r_mu = self.r_mu[labels]
+                r_mu = r_mu[labels]
                 r_sigma = r_sigma_softplus[labels]
                 z_mu_scaled = z_mu*C
                 z_sigma_scaled = z_sigma*C
