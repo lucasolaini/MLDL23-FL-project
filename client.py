@@ -26,8 +26,7 @@ class Client:
         if not args.FedSR:
             self.model = model
         else:
-            model.fc1 = lambda x: x
-            self.net = model
+            self.net = torch.nn.Sequential(*(list(model.children())[:-1])) # removes the last layer
             self.cls = nn.Linear(1024, 62)
             self.model = nn.Sequential(self.net, self.cls)
 

@@ -4,6 +4,7 @@ from collections import OrderedDict
 import numpy as np
 import torch
 import wandb
+from torch import nn
 
 
 class Server:
@@ -12,9 +13,16 @@ class Server:
         self.args = args
         self.train_clients = train_clients
         self.test_clients = test_clients
-        self.model = model
         self.metrics = metrics
         self.leave_one_out = args.leave_one_out
+        
+        if not args.FedSR:
+            self.model = model
+        else:
+            self.net = torch.nn.Sequential(*(list(model.children())[:-1])) # removes the last layer
+            self.cls = nn.Linear(1024, 62)
+            self.model = nn.Sequential(self.net, self.cls)
+        
         self.model_params_dict = copy.deepcopy(self.model.state_dict())
         
         self.wandb_run_id = ''
