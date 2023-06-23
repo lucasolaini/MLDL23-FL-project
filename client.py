@@ -26,10 +26,14 @@ class Client:
         if not args.FedSR:
             self.model = model
         else:
-            self.net = torch.nn.Sequential(*(list(model.children())[:-1])) # removes the last layer
-            self.net.fc = nn.Linear(64, 1024)
-            self.cls = nn.Linear(512, 62)
+            self.net = model
+            #self.net.fc = nn.Linear(64, 2048)
+            self.net.fc1 = nn.Sequential()
+            self.cls = nn.Linear(1024, 62)
             self.model = nn.Sequential(self.net, self.cls)
+            self.net.cuda()
+            self.cls.cuda()
+            self.model.cuda()
 
     def __str__(self):
         return self.name
@@ -97,7 +101,11 @@ class Client:
         with torch.no_grad():
             for i, (images, labels) in enumerate(dataloader):
                 images, labels = images.cuda(), labels.cuda()
-                outputs = self._get_outputs(images)
+                if self.args.FedSR:
+                  z = self.featurize(images)
+                  outputs = self.cls(z)
+                else:
+                  outputs = self._get_outputs(images)
                 self.update_metric(metric, outputs, labels)
                 
     def compute_loss(self):
@@ -119,10 +127,10 @@ class Client:
         
     def featurize(self, x, num_samples=1, return_dist=False):
         z_params = self.net(x) # 64 x 1024
-        z_mu = z_params[:,:512]
-        z_sigma = F.softplus(z_params[:,512:])
+        z_mu = z_params[:,:1024]
+        z_sigma = F.softplus(z_params[:,1024:])
         z_dist = distributions.Independent(distributions.normal.Normal(z_mu,z_sigma),1)
-        z = z_dist.rsample([num_samples]).view([-1, 512])
+        z = z_dist.rsample([num_samples]).view([-1, 1024])
         
         if return_dist:
             return z, (z_mu,z_sigma)
@@ -130,13 +138,12 @@ class Client:
             return z
         
     def run_epoch_FedSR(self, cur_epoch, optimizer):
-        
         L2R_coeff = 0.01
         CMI_coeff = 0.001
         
-        r_mu = nn.Parameter(torch.zeros(62, 512))
-        r_sigma = nn.Parameter(torch.ones(62, 512))
-        C = nn.Parameter(torch.ones([]))
+        r_mu = nn.Parameter(torch.zeros(62, 1024)).cuda()
+        r_sigma = nn.Parameter(torch.ones(62, 1024)).cuda()
+        C = nn.Parameter(torch.ones([])).cuda()
         
         for cur_step, (images, labels) in enumerate(self.train_loader):
             images, labels = images.cuda(), labels.cuda() 
@@ -145,10 +152,14 @@ class Client:
             loss = self.criterion(outputs, labels)
            
             obj = loss
+            print("loss")
+            print(obj)
             regL2R = torch.zeros_like(obj)
             regCMI = torch.zeros_like(obj)
             if L2R_coeff != 0.0:
                 regL2R = z.norm(dim=1).mean()
+                print("L2R")
+                print(L2R_coeff*regL2R)
                 obj = obj + L2R_coeff*regL2R
             if CMI_coeff != 0.0:
                 r_sigma_softplus = F.softplus(r_sigma)
@@ -159,6 +170,8 @@ class Client:
                 regCMI = torch.log(r_sigma) - torch.log(z_sigma_scaled) + \
                         (z_sigma_scaled**2+(z_mu_scaled-r_mu)**2)/(2*r_sigma**2) - 0.5
                 regCMI = regCMI.sum(1).mean()
+                print("CMI")
+                print(CMI_coeff*regCMI)
                 obj = obj + CMI_coeff*regCMI
                 
             optimizer.zero_grad()
@@ -166,10 +179,11 @@ class Client:
             optimizer.step()
         
     def train_FedSR(self):
+        print("Nuovo client")
         self.model.train()
         optimizer = torch.optim.SGD(self.model.parameters(), lr=self.args.lr, weight_decay=self.args.wd, momentum=self.args.m)
 
         for epoch in range(self.args.num_epochs):
             self.run_epoch_FedSR(epoch, optimizer)
 
-        return len(self.dataset), copy.deepcopy(self.model.state_dict())
+        return self.dataset.__len__(), copy.deepcopy(self.model.state_dict())

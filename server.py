@@ -19,9 +19,16 @@ class Server:
         if not args.FedSR:
             self.model = model
         else:
-            self.net = torch.nn.Sequential(*(list(model.children())[:-1])) # removes the last layer
+            self.net = model
+            print(self.net.fc)
+            print("si")
+            #self.net.fc = nn.Linear(64, 2048)
+            self.net.fc1 = nn.Sequential()
             self.cls = nn.Linear(1024, 62)
             self.model = nn.Sequential(self.net, self.cls)
+            self.net.cuda()
+            self.cls.cuda()
+            self.model.cuda()
         
         self.model_params_dict = copy.deepcopy(self.model.state_dict())
         
