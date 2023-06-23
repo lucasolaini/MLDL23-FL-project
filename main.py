@@ -141,7 +141,6 @@ def get_datasets(args):
                 train_datasets.append(Femnist(data, train_transforms, user))
             for user, data in test_data.items():
                 test_datasets.append(Femnist(data, test_transforms, user))
-            
         else:
             train_transforms, test_transforms = get_transforms(args)
             for user, data in train_data.items():

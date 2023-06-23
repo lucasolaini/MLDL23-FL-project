@@ -27,7 +27,8 @@ class Client:
             self.model = model
         else:
             self.net = torch.nn.Sequential(*(list(model.children())[:-1])) # removes the last layer
-            self.cls = nn.Linear(1024, 62)
+            self.net.fc = nn.Linear(64, 1024)
+            self.cls = nn.Linear(512, 62)
             self.model = nn.Sequential(self.net, self.cls)
 
     def __str__(self):
@@ -117,11 +118,11 @@ class Client:
             return loss
         
     def featurize(self, x, num_samples=1, return_dist=False):
-        z_params = self.net(x)
-        z_mu = z_params[:,:1024]
-        z_sigma = F.softplus(z_params[:,1024:])
+        z_params = self.net(x) # 64 x 1024
+        z_mu = z_params[:,:512]
+        z_sigma = F.softplus(z_params[:,512:])
         z_dist = distributions.Independent(distributions.normal.Normal(z_mu,z_sigma),1)
-        z = z_dist.rsample([num_samples]).view([-1, 1024])
+        z = z_dist.rsample([num_samples]).view([-1, 512])
         
         if return_dist:
             return z, (z_mu,z_sigma)
@@ -133,8 +134,8 @@ class Client:
         L2R_coeff = 0.01
         CMI_coeff = 0.001
         
-        r_mu = nn.Parameter(torch.zeros(62, 1024))
-        r_sigma = nn.Parameter(torch.ones(62, 1024))
+        r_mu = nn.Parameter(torch.zeros(62, 512))
+        r_sigma = nn.Parameter(torch.ones(62, 512))
         C = nn.Parameter(torch.ones([]))
         
         for cur_step, (images, labels) in enumerate(self.train_loader):
