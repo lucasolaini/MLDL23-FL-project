@@ -196,7 +196,7 @@ def main():
 
     print('Generate datasets...')
     train_datasets, test_datasets = get_datasets(args)
-    print('Done.')
+    print('Done.')   
 
     metrics = set_metrics(args)
     train_clients, test_clients = gen_clients(args, train_datasets, test_datasets, model)
