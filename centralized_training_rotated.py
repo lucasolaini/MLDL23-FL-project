@@ -135,7 +135,7 @@ def get_train_test_dataloader(domain_out, train_batch_size, test_batch_size=256)
             break
         train_transforms = nptr.Compose([
             nptr.ToTensor(),
-            sstr.RandomRotation(rotated),
+            sstr.RandomRotation(rotation[int(cont_clients / n_clients_per_set)]),
             nptr.Normalize((0.5,), (0.5,)),
         ])
         cont_clients += 1
@@ -146,7 +146,24 @@ def get_train_test_dataloader(domain_out, train_batch_size, test_batch_size=256)
     test_datasets = train_datasets[int(domain_out*len(train_datasets)/6) : int((domain_out+1)*len(train_datasets)/6)]
     del train_datasets[int(domain_out*len(train_datasets)/6) : int((domain_out+1)*len(train_datasets)/6)]
     
+    all_train_data = defaultdict(lambda: {})
+    for femn in train_datasets:
+        for i in range(femn.__len__()):
+            image, label = femn[i]
+            all_train_data['x'] = image
+            all_train_data['y'] = label
+    empty_transforms = nptr.Compose()
+    train_datasets = Femnist(all_train_data, empty_transforms, user = 0)
     
+    all_test_data = defaultdict(lambda: {})
+    for femn in test_datasets:
+        for i in range(femn.__len__()):
+            image, label = femn[i]
+            all_test_data['x'] = image
+            all_test_data['y'] = label
+    empty_transforms = nptr.Compose()
+    test_datasets = Femnist(all_test_data, empty_transforms, user = 0)
+
     # Initialize dataloaders
     train_dataloader = DataLoader(train_datasets, train_batch_size, shuffle=True)
     test_dataloader = DataLoader(test_datasets, test_batch_size)
