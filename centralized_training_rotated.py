@@ -17,7 +17,7 @@ from datasets.femnist import Femnist
 import datasets.ss_transforms as sstr
 import datasets.np_transforms as nptr
 
-
+'''
 def read_femnist_dir(data_dir):
     data = defaultdict(lambda: {})
     data['x'] = []
@@ -35,10 +35,21 @@ def read_femnist_dir(data_dir):
                   data[key].append(value)
                     
     return data
-
+'''
+def read_femnist_dir(data_dir):
+    data = defaultdict(lambda: {})
+    files = os.listdir(data_dir)
+    files = [f for f in files if f.endswith('.json')]
+    for f in files:
+        file_path = os.path.join(data_dir, f)
+        with open(file_path, 'r') as inf:
+            cdata = json.load(inf)
+        data.update(cdata['user_data'])
+    return data
 
 def read_femnist_data(train_data_dir, test_data_dir):
     return read_femnist_dir(train_data_dir), read_femnist_dir(test_data_dir)
+
 
 def get_loss_function():
     loss_function = nn.CrossEntropyLoss()
@@ -98,7 +109,22 @@ def get_train_test_dataloader(domain_out, train_batch_size, test_batch_size=256)
     train_data , test_data = read_femnist_data(train_data_dir, test_data_dir)
     #test data in this case is not utilized because as test set we choose one of the six rotation domain of the trainset
     train_datasets, test_datasets = [], []
-
+    '''
+    rotation = [0, 15, 30, 45, 60, 75]
+    data = []
+    n_clients_per_set = int(round(1002 / 6, 0))
+    n_clients_total = 1002
+    print(f"Clients per set: {n_clients_per_set}")
+    cont_clients = 0
+    for user, data in train_data.items():
+        if cont_clients >= n_clients_total:
+            break
+        rotation_transform = sstr.RandomRotation(rotation[int(cont_clients / n_clients_per_set)])
+        for lbl,img in data.items():
+            data[lbl] = rotation_transform.rotate(img, )
+        cont_clients += 1
+        ####train_datasets.append(Femnist(data, train_transforms, user))
+    '''
     rotation = [0, 15, 30, 45, 60, 75]
     n_clients_per_set = int(round(1002 / 6, 0))
     n_clients_total = 1002
@@ -108,21 +134,26 @@ def get_train_test_dataloader(domain_out, train_batch_size, test_batch_size=256)
         if cont_clients >= n_clients_total:
             break
         train_transforms = nptr.Compose([
-        nptr.ToTensor(),
-        sstr.RandomRotation(rotation[int(cont_clients / n_clients_per_set)]),
-        nptr.Normalize((0.5,), (0.5,)),
+            nptr.ToTensor(),
+            sstr.RandomRotation(rotated),
+            nptr.Normalize((0.5,), (0.5,)),
         ])
         cont_clients += 1
-        train_datasets.append(Femnist(data, train_transforms, user))
+        train_datasets.append(Femnist(data, train_transforms, user))   
+    #for user, data in test_data.items():
+    #    test_datasets.append(Femnist(data, test_transforms, user))
 
     test_datasets = train_datasets[int(domain_out*len(train_datasets)/6) : int((domain_out+1)*len(train_datasets)/6)]
     del train_datasets[int(domain_out*len(train_datasets)/6) : int((domain_out+1)*len(train_datasets)/6)]
-
+    
+    
     # Initialize dataloaders
     train_dataloader = DataLoader(train_datasets, train_batch_size, shuffle=True)
     test_dataloader = DataLoader(test_datasets, test_batch_size)
     
     return train_dataloader, test_dataloader
+
+
 
 def main(domain_out = None, batch_size=64, device='cuda:0', learning_rate=10**-2, weight_decay=10**-6, momentum=0.9, epochs=50):
     

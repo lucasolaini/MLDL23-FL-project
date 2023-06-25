@@ -135,10 +135,15 @@ def get_datasets(args):
             cont_clients = 0
             for user, data in train_data.items():
                 if cont_clients >= n_clients_total:
-                    break
+                    if args.leave_one_out != None:
+                        break
+                    else:
+                        train_transforms, test_transforms = get_transforms(args, rotation[0])
+                        train_datasets.append(Femnist(data, train_transforms, user))
+                        continue
                 train_transforms, test_transforms = get_transforms(args, rotation[int(cont_clients / n_clients_per_set)])
                 cont_clients += 1
-                train_datasets.append(Femnist(data, train_transforms, user))
+                train_datasets.append(Femnist(data, train_transforms, user))   
             for user, data in test_data.items():
                 test_datasets.append(Femnist(data, test_transforms, user))
         else:
