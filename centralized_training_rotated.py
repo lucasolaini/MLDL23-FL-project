@@ -1,3 +1,4 @@
+from numpy.core.fromnumeric import nonzero
 import torch
 import torch.nn as nn
 from torchvision import datasets
@@ -8,6 +9,7 @@ from sklearn.model_selection import ParameterGrid
 from models.cnn import CNN
 from main import get_datasets
 from utils.args import get_parser
+from torch.utils.data import ConcatDataset
 import wandb
 import os
 import json
@@ -107,24 +109,9 @@ def get_train_test_dataloader(domain_out, train_batch_size, test_batch_size=256)
     test_data_dir = os.path.join('data', 'femnist', 'data', 'niid' if niid else 'iid', 'test')
 
     train_data , test_data = read_femnist_data(train_data_dir, test_data_dir)
-    #test data in this case is not utilized because as test set we choose one of the six rotation domain of the trainset
+    
     train_datasets, test_datasets = [], []
-    ''' ### da cancellare (primo metodo ruotando a priori)
-    rotation = [0, 15, 30, 45, 60, 75]
-    data = []
-    n_clients_per_set = int(round(1002 / 6, 0))
-    n_clients_total = 1002
-    print(f"Clients per set: {n_clients_per_set}")
-    cont_clients = 0
-    for user, data in train_data.items():
-        if cont_clients >= n_clients_total:
-            break
-        rotation_transform = sstr.RandomRotation(rotation[int(cont_clients / n_clients_per_set)])
-        for lbl,img in data.items():
-            data[lbl] = rotation_transform.rotate(img, )
-        cont_clients += 1
-        ####train_datasets.append(Femnist(data, train_transforms, user))
-    '''
+    
     rotation = [0, 15, 30, 45, 60, 75]
     n_clients_per_set = int(round(1002 / 6, 0))
     n_clients_total = 1002
@@ -147,7 +134,7 @@ def get_train_test_dataloader(domain_out, train_batch_size, test_batch_size=256)
             nptr.Normalize((0.5,), (0.5,)),
         ])
         cont_clients += 1
-        train_datasets.append(Femnist(data, train_transforms, user))  
+        train_datasets.append(Femnist(data, train_transforms, user))
 
     if domain_out == None:
         test_transforms = nptr.Compose([
@@ -160,31 +147,11 @@ def get_train_test_dataloader(domain_out, train_batch_size, test_batch_size=256)
         test_datasets = train_datasets[int(domain_out*len(train_datasets)/6) : int((domain_out+1)*len(train_datasets)/6)]
         del train_datasets[int(domain_out*len(train_datasets)/6) : int((domain_out+1)*len(train_datasets)/6)]
     
-    all_train_data = defaultdict(lambda: {})
-    all_train_data['x'] = []
-    all_train_data['y'] = []
-    for femn in train_datasets:
-        for i in range(femn.__len__()):
-            image, label = femn[i] # = femn.__getitem__[i]
-            all_train_data['x'].append(image)
-            all_train_data['y'].append(label)
-    empty_transforms = nptr.Compose()
-    train_datasets = Femnist(all_train_data, empty_transforms, user = 0)
+    train_dataset = ConcatDataset(train_datasets)
+    test_dataset = ConcatDataset(test_datasets)
     
-    all_test_data = defaultdict(lambda: {})
-    all_test_data['x'] = []
-    all_test_data['y'] = []
-    for femn in test_datasets:
-        for i in range(femn.__len__()):
-            image, label = femn[i]
-            all_test_data['x'].append(image)
-            all_test_data['y'].append(label)
-    empty_transforms = nptr.Compose()
-    test_datasets = Femnist(all_test_data, empty_transforms, user = 0)
-
-    # Initialize dataloaders
-    train_dataloader = DataLoader(train_datasets, train_batch_size, shuffle=True)
-    test_dataloader = DataLoader(test_datasets, test_batch_size)
+    train_dataloader = DataLoader(train_dataset, train_batch_size, shuffle=True)
+    test_dataloader = DataLoader(test_dataset, test_batch_size)
     
     return train_dataloader, test_dataloader
 
@@ -216,11 +183,15 @@ def main(domain_out = None, batch_size=64, device='cuda:0', learning_rate=10**-2
     loss_function = get_loss_function()
 
     for e in range(epochs):
+        
+        print(f"Epoch: {e}")
 
         # training and accuracy on the training set
+        print("Training")
         train_loss, train_accuracy = train(net, train_loader, optimizer, loss_function, device)
 
         # test on the test set after training
+        print("Testing")
         test_loss, test_accuracy = test(net, test_loader, loss_function, device)
 
         wandb.log({"Train Accuracy": train_accuracy, "Train Loss": train_loss,
