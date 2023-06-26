@@ -177,13 +177,26 @@ def set_metrics(args):
     return metrics
 
 
-def gen_clients(args, train_datasets, test_datasets, model):
+def gen_clients(args, train_datasets, test_datasets, model, p):
     clients = [[], []]
     for i, datasets in enumerate([train_datasets, test_datasets]):
         for ds in datasets:
-            clients[i].append(Client(args, ds, model, test_client=i == 1))
+            clients[i].append(Client(args, ds, model, p, test_client=i == 1))
     return clients[0], clients[1]
 
+def get_label_distribution(train_datasets):
+    labels = set(torch.arange(62))
+    p = torch.zeros(62)
+    tot_len = 0
+    
+    for dataset in train_datasets:
+        p += torch.tensor([(torch.tensor(dataset.targets) == label).sum() for label in labels])
+        tot_len += len(dataset)
+        
+    print(p)
+    print(tot_len)
+        
+    return p / tot_len
 
 def main():
     parser = get_parser()
@@ -202,9 +215,14 @@ def main():
     print('Generate datasets...')
     train_datasets, test_datasets = get_datasets(args)
     print('Done.')   
+    
+    if args.FedIR:
+        p = get_label_distribution(train_datasets)
+    else:
+        p = None
 
     metrics = set_metrics(args)
-    train_clients, test_clients = gen_clients(args, train_datasets, test_datasets, model)
+    train_clients, test_clients = gen_clients(args, train_datasets, test_datasets, model, p)
     print(f"Numero train clients: {len(train_clients)}")
     print(f"Numero test clients: {len(test_clients)}")
 

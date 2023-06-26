@@ -95,10 +95,15 @@ class Server:
             dataset_lengths.append(dataset_length)
 
         total_dataset_lengths = sum(dataset_lengths)
-
-        for i, update in enumerate(updates): 
-            for k, v in update.items():
-                update[k] = update[k] * (dataset_lengths[i] / total_dataset_lengths)
+        
+        if self.args.FedVC:
+            for i, update in enumerate(updates): 
+                for k, v in update.items():
+                    update[k] = update[k] / self.args.clients_per_round
+        else:
+            for i, update in enumerate(updates): 
+                for k, v in update.items():
+                    update[k] = update[k] * (dataset_lengths[i] / total_dataset_lengths)
 
         return updates
 

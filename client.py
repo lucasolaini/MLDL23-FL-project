@@ -3,7 +3,7 @@ import torch
 
 from torch import optim, nn
 from collections import defaultdict
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, Subset
 
 from utils.utils import HardNegativeMining, MeanReduction
 import torch.nn.functional as F
@@ -12,28 +12,58 @@ import torch.distributions as distributions
 
 class Client:
 
-    def __init__(self, args, dataset, model, test_client=False):
+    def __init__(self, args, dataset, model, p, test_client=False):
         self.args = args
         self.dataset = dataset
         self.name = self.dataset.client_name
         
-        self.train_loader = DataLoader(self.dataset, batch_size=self.args.bs, shuffle=True, drop_last=True) \
-            if not test_client else None
-        self.test_loader = DataLoader(self.dataset, batch_size=1024, shuffle=False)
-        self.criterion = nn.CrossEntropyLoss(ignore_index=255, reduction='mean')
-        self.reduction = HardNegativeMining() if self.args.hnm else MeanReduction()
-        
-        if not args.FedSR:
-            self.model = model
+        if args.FedVC:
+            NVC = 192
+            if len(dataset) >= NVC:
+                train_idxs_vc = torch.randper(len(self.dataset))[:NVC]
+            else:
+                train_idxs_vc = torch.randint(len(self.dataset), (NVC, ))
+                
+            self.train_loader = DataLoader(Subset(self.dataset, train_idxs_vc), batch_size=self.args.bs, shuffle=True, drop_last=True) \
+                if not test_client else None
         else:
+            self.train_loader = DataLoader(self.dataset, batch_size=self.args.bs, shuffle=True, drop_last=True) \
+                if not test_client else None
+                
+        self.test_loader = DataLoader(self.dataset, batch_size=1024, shuffle=False)
+        
+        if args.FedSR:
             self.net = model
-            #self.net.fc = nn.Linear(64, 2048)
             self.net.fc1 = nn.Sequential()
             self.cls = nn.Linear(1024, 62)
             self.model = nn.Sequential(self.net, self.cls)
             self.net.cuda()
             self.cls.cuda()
-            self.model.cuda()
+        else:
+            self.model = model
+            
+        if args.FedIR:
+            labels = set(torch.arange(62))
+            self.q = torch.tensor([(torch.tensor(self.dataset.targets) == label).sum() for label in labels]) / len(self.dataset)
+            self.p = p
+            
+            weight = torch.zeros(62).cuda()
+            
+            for i in range(62):
+                if self.q[i] != 0: # some labels might not be seen in this dataset
+                    weight[i] = self.p[i] / self.q[i]
+                else:
+                    weight[i] = 0.001 # setting weight = 0 leads to overfitting
+        else:
+            weight = None
+            
+        
+            
+            
+        self.criterion = nn.CrossEntropyLoss(ignore_index=255, reduction='mean', weight=weight)
+        self.reduction = HardNegativeMining() if self.args.hnm else MeanReduction()    
+            
+        
 
     def __str__(self):
         return self.name
