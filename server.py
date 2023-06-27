@@ -36,6 +36,11 @@ class Server:
 
     def select_clients(self, strategy='uniform'):
         num_clients = min(self.args.clients_per_round, len(self.train_clients))
+        
+        if self.args.FedVC:
+            datasets_lengths = [len(train_client.dataset) for train_client in self.train_clients]
+            p = np.array(datasets_lengths) / sum(datasets_lengths)
+            return np.choice(self.train_clients, num_clients, replace=False, p=p)
         if strategy == 'uniform':
             return np.random.choice(self.train_clients, num_clients, replace=False)
         if strategy == 'high':

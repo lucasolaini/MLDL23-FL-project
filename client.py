@@ -20,7 +20,7 @@ class Client:
         if args.FedVC:
             NVC = 192
             if len(dataset) >= NVC:
-                train_idxs_vc = torch.randper(len(self.dataset))[:NVC]
+                train_idxs_vc = torch.randperm(len(self.dataset))[:NVC]
             else:
                 train_idxs_vc = torch.randint(len(self.dataset), (NVC, ))
                 
