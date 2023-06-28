@@ -147,7 +147,7 @@ class Server:
             aggregated_state_dict = self.aggregate(updates)
 
             self.model.load_state_dict(aggregated_state_dict)
-            torch.save(self.model.state_dict(), self.args.backup_folder + '/' + self.wandb_run_id)
+            #torch.save(self.model.state_dict(), self.args.backup_folder + '/' + self.wandb_run_id)
 
             if r % 20 == 0 and r != 0:
                 if self.leave_one_out is None:

@@ -182,14 +182,10 @@ class Client:
             loss = self.criterion(outputs, labels)
            
             obj = loss
-            print("loss")
-            print(obj)
             regL2R = torch.zeros_like(obj)
             regCMI = torch.zeros_like(obj)
             if L2R_coeff != 0.0:
                 regL2R = z.norm(dim=1).mean()
-                print("L2R")
-                print(L2R_coeff*regL2R)
                 obj = obj + L2R_coeff*regL2R
             if CMI_coeff != 0.0:
                 r_sigma_softplus = F.softplus(r_sigma)
@@ -200,16 +196,13 @@ class Client:
                 regCMI = torch.log(r_sigma) - torch.log(z_sigma_scaled) + \
                         (z_sigma_scaled**2+(z_mu_scaled-r_mu)**2)/(2*r_sigma**2) - 0.5
                 regCMI = regCMI.sum(1).mean()
-                print("CMI")
-                print(CMI_coeff*regCMI)
                 obj = obj + CMI_coeff*regCMI
                 
             optimizer.zero_grad()
-            obj.backward()
+            obj.backward(retain_graph=True)
             optimizer.step()
         
     def train_FedSR(self):
-        print("Nuovo client")
         self.model.train()
         optimizer = torch.optim.SGD(self.model.parameters(), lr=self.args.lr, weight_decay=self.args.wd, momentum=self.args.m)
 
