@@ -57,9 +57,6 @@ class Client:
         else:
             weight = None
             
-        
-            
-            
         self.criterion = nn.CrossEntropyLoss(ignore_index=255, reduction='mean', weight=weight)
         self.reduction = HardNegativeMining() if self.args.hnm else MeanReduction()    
             
@@ -150,13 +147,10 @@ class Client:
                 loss += loss_fn(outputs, labels).item()
                 cnt += labels.size(0)
         
-        if cnt > 0:      
-            return loss /cnt
-        else:
-            return loss
+        return loss
         
     def featurize(self, x, num_samples=1, return_dist=False):
-        z_params = self.net(x) # 64 x 1024
+        z_params = self.net(x) # 64 x 2048
         z_mu = z_params[:,:1024]
         z_sigma = F.softplus(z_params[:,1024:])
         z_dist = distributions.Independent(distributions.normal.Normal(z_mu,z_sigma),1)
@@ -168,8 +162,6 @@ class Client:
             return z
         
     def run_epoch_FedSR(self, cur_epoch, optimizer):
-        L2R_coeff = 0.01
-        CMI_coeff = 0.001
         
         r_mu = nn.Parameter(torch.zeros(62, 1024)).cuda()
         r_sigma = nn.Parameter(torch.ones(62, 1024)).cuda()
@@ -184,10 +176,10 @@ class Client:
             obj = loss
             regL2R = torch.zeros_like(obj)
             regCMI = torch.zeros_like(obj)
-            if L2R_coeff != 0.0:
+            if self.args.L2R_coeff != 0.0:
                 regL2R = z.norm(dim=1).mean()
-                obj = obj + L2R_coeff*regL2R
-            if CMI_coeff != 0.0:
+                obj = obj + self.args.L2R_coeff*regL2R
+            if self.args.CMI_coeff != 0.0:
                 r_sigma_softplus = F.softplus(r_sigma)
                 r_mu = r_mu[labels]
                 r_sigma = r_sigma_softplus[labels]
@@ -196,7 +188,7 @@ class Client:
                 regCMI = torch.log(r_sigma) - torch.log(z_sigma_scaled) + \
                         (z_sigma_scaled**2+(z_mu_scaled-r_mu)**2)/(2*r_sigma**2) - 0.5
                 regCMI = regCMI.sum(1).mean()
-                obj = obj + CMI_coeff*regCMI
+                obj = obj + self.args.CMI_coeff*regCMI
                 
             optimizer.zero_grad()
             obj.backward(retain_graph=True)
@@ -209,4 +201,4 @@ class Client:
         for epoch in range(self.args.num_epochs):
             self.run_epoch_FedSR(epoch, optimizer)
 
-        return self.dataset.__len__(), copy.deepcopy(self.model.state_dict())
+        return len(self.dataset), copy.deepcopy(self.model.state_dict())

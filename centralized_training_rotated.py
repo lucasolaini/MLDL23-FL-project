@@ -19,25 +19,6 @@ from datasets.femnist import Femnist
 import datasets.ss_transforms as sstr
 import datasets.np_transforms as nptr
 
-'''
-def read_femnist_dir(data_dir):
-    data = defaultdict(lambda: {})
-    data['x'] = []
-    data['y'] = []
-    files = os.listdir(data_dir)
-    files = [f for f in files if f.endswith('.json')]
-    for f in files:
-        file_path = os.path.join(data_dir, f)
-        with open(file_path, 'r') as inf:
-            cdata = json.load(inf)
-            
-        for users, d in cdata['user_data'].items():
-            for key, values in d.items():
-                for value in values:
-                  data[key].append(value)
-                    
-    return data
-'''
 def read_femnist_dir(data_dir):
     data = defaultdict(lambda: {})
     files = os.listdir(data_dir)
@@ -159,9 +140,14 @@ def get_train_test_dataloader(domain_out, train_batch_size, test_batch_size=256)
 
 def main(domain_out = None, batch_size=64, device='cuda:0', learning_rate=10**-2, weight_decay=10**-6, momentum=0.9, epochs=50):
     
+    if domain_out != None:
+        name = "domain_out = " + str(domain_out*15) + "°",
+    else:
+        name = "domain_out = None"
+
     wandb.init(
         project = "Rotated_centralized",
-        name = "domain_out = " + str(domain_out*15) + "°",
+        name = name,
         config = {
         "batch_size": batch_size,
         "learning_rate": learning_rate,

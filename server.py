@@ -20,15 +20,11 @@ class Server:
             self.model = model
         else:
             self.net = model
-            print(self.net.fc)
-            print("si")
-            #self.net.fc = nn.Linear(64, 2048)
             self.net.fc1 = nn.Sequential()
             self.cls = nn.Linear(1024, 62)
             self.model = nn.Sequential(self.net, self.cls)
             self.net.cuda()
             self.cls.cuda()
-            self.model.cuda()
         
         self.model_params_dict = copy.deepcopy(self.model.state_dict())
         
@@ -37,7 +33,7 @@ class Server:
     def select_clients(self, strategy='uniform'):
         num_clients = min(self.args.clients_per_round, len(self.train_clients))
         
-        if self.args.FedVC:
+        if self.args.FedVC: # probability ptoportional to the original dataset's length of the clients
             datasets_lengths = [len(train_client.dataset) for train_client in self.train_clients]
             p = np.array(datasets_lengths) / sum(datasets_lengths)
             return np.choice(self.train_clients, num_clients, replace=False, p=p)
@@ -64,16 +60,18 @@ class Server:
             losses = []
             
             for c in A:
-                losses.append(c.compute_loss())
+                losses.append(c.compute_loss()) # compute the losses of d clients
                 
             losses = np.array(losses)
                 
-            return A[(-losses).argsort][self.args.clients_per_round]
+            return A[(-losses).argsort][self.args.clients_per_round] # select the clients with higher loss
         else:
             raise NotImplementedError
 
     def select_clients_domGen(self, leave_one_out):
         num_clients = min(self.args.clients_per_round, len(self.train_clients))
+
+        # chooses the clients in the target domain, i.e., the ones on which train is not done
         return np.random.choice([x for i,x in enumerate(self.train_clients) if i not in range(int(leave_one_out*len(self.train_clients)/6), \
                                                         int((leave_one_out+1)*len(self.train_clients)/6))], num_clients, replace=False)
 
@@ -147,7 +145,7 @@ class Server:
             aggregated_state_dict = self.aggregate(updates)
 
             self.model.load_state_dict(aggregated_state_dict)
-            #torch.save(self.model.state_dict(), self.args.backup_folder + '/' + self.wandb_run_id)
+            torch.save(self.model.state_dict(), self.args.backup_folder + '/' + self.wandb_run_id)
 
             if r % 20 == 0 and r != 0:
                 if self.leave_one_out is None:
@@ -183,12 +181,7 @@ class Server:
     def eval_train_domGen(self, leave_one_out):
         for i, c in enumerate(self.train_clients[int(leave_one_out*len(self.train_clients)/6) : int((leave_one_out+1)*len(self.train_clients)/6)]):
             c.model.load_state_dict(self.model.state_dict())
-            print(f'Training client {i}: {c.name}')
             c.test(self.metrics['eval_train'], 'eval')
-
-        print(f'Evaluation on train clients')
-        self.metrics['eval_train'].get_results()
-        print(self.metrics['eval_train'].__str__())
 
     def test(self):
         """
@@ -215,11 +208,11 @@ class Server:
             project = "Federated_setting_niid"
         else:
             project = "Federated_setting_iid"
-        
-        project = "FedSR"
+
+        project = self.args.project_name
 
         # assings a name to the run    
-        name = str(self.leave_one_out) + "_" + \
+        name = str(self.args.run_name) + "_" + \
                "bs=" + str(self.args.bs) + "_" + \
                "lr=" + str(self.args.lr) + "_" + \
                "wd=" + str(self.args.wd) + "_" + \

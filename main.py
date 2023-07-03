@@ -130,20 +130,23 @@ def get_datasets(args):
         if args.dom_gen:
             rotation = [0, 15, 30, 45, 60, 75]
             n_clients_per_set = int(round(1002 / 6, 0))
+            # select 1002 clients (divisible by 6 -> groups have the same dimension)
             n_clients_total = 1002
-            print(f"Clients per set: {n_clients_per_set}")
             cont_clients = 0
+
+            
             for user, data in train_data.items():
                 if cont_clients >= n_clients_total:
-                    if args.leave_one_out != None:
+                    if args.leave_one_out != None: # train set only for 1002 clients
                         break
                     else:
-                        train_transforms, test_transforms = get_transforms(args, rotation[0])
+                        train_transforms, test_transforms = get_transforms(args, rotation[0]) 
                         train_datasets.append(Femnist(data, train_transforms, user))
                         continue
                 train_transforms, test_transforms = get_transforms(args, rotation[int(cont_clients / n_clients_per_set)])
                 cont_clients += 1
-                train_datasets.append(Femnist(data, train_transforms, user))   
+                train_datasets.append(Femnist(data, train_transforms, user)) 
+            # same test set as FedAvg  
             for user, data in test_data.items():
                 test_datasets.append(Femnist(data, test_transforms, user))
         else:
@@ -193,15 +196,12 @@ def get_label_distribution(train_datasets):
         p += torch.tensor([(torch.tensor(dataset.targets) == label).sum() for label in labels])
         tot_len += len(dataset)
         
-    print(p)
-    print(tot_len)
-        
     return p / tot_len
 
 def main():
     parser = get_parser()
-    args = parser.parse_args() # Parses the arguments recived from command line
-    set_seed(args.seed) # Sets the seed to the one specified as argument
+    args = parser.parse_args() # parses the arguments recived from command line
+    set_seed(args.seed) # sets the seed to the one specified as argument
 
     print(f'Initializing model...')
     model = model_init(args)
@@ -223,8 +223,6 @@ def main():
 
     metrics = set_metrics(args)
     train_clients, test_clients = gen_clients(args, train_datasets, test_datasets, model, p)
-    print(f"Numero train clients: {len(train_clients)}")
-    print(f"Numero test clients: {len(test_clients)}")
 
     server = Server(args, train_clients, test_clients, model, metrics)
     server.train()

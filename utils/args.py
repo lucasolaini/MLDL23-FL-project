@@ -31,4 +31,9 @@ def get_parser():
     parser.add_argument('--FedSR', action='store_true', default=False, help='use FedSR if True')
     parser.add_argument('--FedIR', action='store_true', default=False, help='use FedIR if True')
     parser.add_argument('--FedVC', action='store_true', default=False, help='use FedVC if True')
+    parser.add_argument('--run_name', type=str, default='', help='wandb run name')
+    parser.add_argument('--project_name', type=str, default='', help='wandb project name')
+    parser.add_argument('--L2R_coeff', type=float, default=0.01, help='alpha L2R')
+    parser.add_argument('--CMI_coeff', type=float, default=0.001, help='alpha CMI')
+
     return parser
